@@ -11,12 +11,14 @@ from __future__ import annotations
 
 import copy
 import re
+import uuid
 from collections.abc import Iterable, Sequence
 from email import policy
 from email.headerregistry import Address
 from email.message import EmailMessage
 from email.utils import formatdate, getaddresses, make_msgid
 
+from .attachments import FileAttachment
 from .mime import decode_header_value, format_address, parse_addresses
 from .models import ParsedMessage
 
@@ -83,8 +85,10 @@ def build_message(
     bcc: Sequence[str] = (),
     in_reply_to: str | None = None,
     references: str | Sequence[str] | None = None,
+    attachments: Sequence[FileAttachment] = (),
 ) -> EmailMessage:
-    """Compose a UTF-8 plain-text message.  Any CR/LF/NUL in an address, name or subject (or a
+    """Compose a UTF-8 plain-text message, with ``attachments`` (already loaded and checked by
+    ``attachments.load``) after the text.  Any CR/LF/NUL in an address, name or subject (or a
     malformed address) raises ``ValueError``.  Bcc is kept as a header; see module docstring."""
     sender = parse_address(from_addr)
     to_list, cc_list, bcc_list = _addresses(to), _addresses(cc), _addresses(bcc)
@@ -109,6 +113,13 @@ def build_message(
     if ref_ids:
         msg["References"] = " ".join(ref_ids)
     msg.set_content(body, charset="utf-8")
+    for a in attachments:
+        _check_text(a.filename, "attachment file name")
+        msg.add_attachment(a.data, maintype=a.maintype, subtype=a.subtype, filename=a.filename)
+    if msg.is_multipart():
+        # Without a fixed boundary every serialisation picks a new random one, so the bytes
+        # shown in the send confirmation could never match the bytes sent.
+        msg.set_boundary(f"=_posta_{uuid.uuid4().hex}")
     return msg
 
 
@@ -133,6 +144,7 @@ def build_reply(
     reply_all: bool = False,
     *,
     max_quote_chars: int = 10000,
+    attachments: Sequence[FileAttachment] = (),
 ) -> EmailMessage:
     """Reply to ``original``: goes to Reply-To (else From); ``reply_all`` also Cc's the other
     To/Cc recipients, never ``from_addr`` itself.  Sets In-Reply-To/References and quotes the
@@ -177,6 +189,7 @@ def build_reply(
         cc=cc,
         in_reply_to=original.message_id,
         references=refs or None,
+        attachments=attachments,
     )
 
 

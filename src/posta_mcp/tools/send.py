@@ -49,6 +49,7 @@ from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import BaseModel, Field
 
 from posta_mcp import compose, smtp
+from posta_mcp.attachments import load as load_attachments
 from posta_mcp.logs import redact
 from posta_mcp.mime import strip_invisible
 from posta_mcp.tools._common import SEND, tool_errors
@@ -256,7 +257,9 @@ def _check_visible(msg: EmailMessage) -> None:
         )
 
 
-def _confirmation_text(msg: EmailMessage, recipients: tuple[str, ...], wire_sha: str) -> str:
+def _confirmation_text(
+    msg: EmailMessage, recipients: tuple[str, ...], wire_sha: str, sources: tuple[str, ...]
+) -> str:
     blocks, attachments = _describe_parts(msg)
     extra = sorted({one_line(k, 40) for k in msg.keys() if str(k).lower() not in _PLAIN_HEADERS})
     lines = [
@@ -270,6 +273,7 @@ def _confirmation_text(msg: EmailMessage, recipients: tuple[str, ...], wire_sha:
         f"Subject: {_header(msg, 'Subject')}",
         *([f"Other headers: {', '.join(extra)}"] if extra else []),
         f"Attachments: {', '.join(attachments) if attachments else 'none'}",
+        *(f"Attached from this computer: {path}" for path in sources),
         f"Will be delivered to ({len(recipients)}): {', '.join(recipients)}",
         f"Fingerprint (SHA-256 of the exact bytes to be sent): {wire_sha}",
         "",
@@ -278,7 +282,13 @@ def _confirmation_text(msg: EmailMessage, recipients: tuple[str, ...], wire_sha:
     return "\n".join(lines)
 
 
-def _prepare(msg: EmailMessage, sender: str, *, draft: tuple[str, int] | None = None) -> Prepared:
+def _prepare(
+    msg: EmailMessage,
+    sender: str,
+    *,
+    draft: tuple[str, int] | None = None,
+    sources: tuple[str, ...] = (),
+) -> Prepared:
     recipients = tuple(compose.envelope_recipients(msg))
     if not recipients:
         raise ToolError("The message has no recipients; nothing was sent.")
@@ -303,7 +313,7 @@ def _prepare(msg: EmailMessage, sender: str, *, draft: tuple[str, int] | None = 
         wire=wire,
         wire_sha=wire_sha,
         binding=_binding(sender, recipients, wire),
-        shown=_confirmation_text(msg, recipients, wire_sha),
+        shown=_confirmation_text(msg, recipients, wire_sha, sources),
         expires=time.monotonic() + PENDING_TTL_SECONDS,
         draft=draft,
     )
@@ -344,17 +354,23 @@ def register(server: MCPServer, deps: Any) -> None:
         reply_to_folder: str | None,
         reply_to_uid: int | None,
         reply_all: bool,
-    ) -> EmailMessage:
+        attachments: list[str],
+    ) -> Prepared:
         if (reply_to_folder is None) != (reply_to_uid is None):
             raise ToolError("reply_to_folder and reply_to_uid must be given together.")
         try:
+            files = load_attachments(attachments)
+            sources = tuple(f.path for f in files)
             if reply_to_uid is None or reply_to_folder is None:
-                return compose.build_message(config.email, to, subject, body, cc, bcc)
+                msg = compose.build_message(
+                    config.email, to, subject, body, cc, bcc, attachments=files
+                )
+                return _prepare(msg, config.email, sources=sources)
             with tool_errors("Reading the message being replied to"), deps.mailbox() as mb:
                 original = mb.fetch(reply_to_folder, reply_to_uid)
             draft = compose.build_reply(original, config.email, body, reply_all)
             # Explicit arguments win over the reply defaults.
-            return compose.build_message(
+            msg = compose.build_message(
                 config.email,
                 to or [str(a) for a in draft.get_all("To", [])],
                 subject or str(draft["Subject"]),
@@ -363,7 +379,9 @@ def register(server: MCPServer, deps: Any) -> None:
                 bcc,
                 in_reply_to=draft["In-Reply-To"],
                 references=draft["References"],
+                attachments=files,
             )
+            return _prepare(msg, config.email, sources=sources)
         except ValueError as exc:
             raise ToolError(f"Invalid message: {one_line(redact(str(exc)), 200)}") from None
 
@@ -376,6 +394,7 @@ def register(server: MCPServer, deps: Any) -> None:
         reply_to_folder: str | None,
         reply_to_uid: int | None,
         reply_all: bool,
+        attachments: list[str],
         ctx: Context,
     ) -> Elicit[Confirm]:
         gate(ctx)
@@ -388,12 +407,12 @@ def register(server: MCPServer, deps: Any) -> None:
             reply_to_folder=reply_to_folder,
             reply_to_uid=reply_to_uid,
             reply_all=reply_all,
+            attachments=attachments,
         )
         prepared = store.get_or_create(
             key,
-            lambda: _prepare(
-                build_new(to, subject, body, cc, bcc, reply_to_folder, reply_to_uid, reply_all),
-                config.email,
+            lambda: build_new(
+                to, subject, body, cc, bcc, reply_to_folder, reply_to_uid, reply_all, attachments
             ),
         )
         return Elicit(prepared.shown, Confirm)
@@ -518,12 +537,15 @@ def register(server: MCPServer, deps: Any) -> None:
         reply_to_folder: str | None = None,
         reply_to_uid: int | None = None,
         reply_all: bool = False,
+        attachments: list[str] = [],  # noqa: B006
     ) -> SendResult:
         """Send an email. DISABLED unless the user enabled sending, and the user must confirm
         every message in a dialog that shows the exact recipients and text. Nothing is sent
         if they decline. To reply, pass reply_to_folder and reply_to_uid (threading headers
         and, when `to`/`subject` are empty, recipients and subject come from that message).
-        Prefer create_draft when unsure."""
+        `attachments`: absolute paths of files on this computer to attach (max 10 files,
+        18 MB in total; hidden files and folders are refused). Attach only files the user
+        asked for. Prefer create_draft when unsure."""
         if not config.send_enabled:  # defence in depth: the resolver already checked
             raise ToolError(DISABLED_MESSAGE)
         key = message_key(
@@ -535,6 +557,7 @@ def register(server: MCPServer, deps: Any) -> None:
             reply_to_folder=reply_to_folder,
             reply_to_uid=reply_to_uid,
             reply_all=reply_all,
+            attachments=attachments,
         )
         return conclude(
             store.pop(key),
