@@ -196,3 +196,14 @@ Features:
 - Sending is off by default and always requires your confirmation; you are responsible for what
   you send. Provided as-is without warranty (see LICENSE).
 - Preset values marked `unverified` have not been tested against the live server.
+
+## 10. Amendments after research (see docs/RESEARCH.md)
+
+- **Send confirmation** uses the mcp 2.3 resolver pattern (`Annotated[ElicitationResult[Confirm],
+  Resolve(fn)]`), not plain `ctx.elicit()`, which fails on the modern protocol era. The resolver
+  checks `ctx.client_capabilities.elicitation.form` and raises `ToolError` (suggest a draft) when
+  missing. Tests cover both protocol eras (`Client(..., mode="legacy"|"auto")`).
+- **Boğaziçi preset**: login username is the local part (`username_style = "localpart"`); student
+  (`std.bogazici.edu.tr`) and staff (`bogazici.edu.tr`) accounts use different hosts, chosen by
+  the email domain (`[[accounts]]`-style variants in the preset). All values remain unverified.
+- **Env from MCPB hosts**: empty `POSTA_*` values count as unset; booleans parse leniently.
