@@ -21,3 +21,5 @@ Deviations from `docs/SPEC.md` and notable judgment calls, one or two lines each
 - Untrusted content is wrapped with a per-call random nonce in both delimiters; header fields (from, subject) are inside the wrapper too.
 - SMTP must send `send_bytes(msg)` (no Bcc header) to `envelope_recipients(msg)`; drafts keep Bcc via `message_bytes(msg)`.
 - Reply attribution line is English; `Ynt:` folds like `Re:`. Non-ASCII local parts are rejected; IDN domains go out as punycode.
+- Presets support `[[variants]]` chosen by exact email domain (Boğaziçi: `student`, `staff`). `pt.`/`retired.` accounts use different hosts and must set them explicitly for now.
+- Tools are plain sync functions; the SDK already runs sync tools in a worker thread.
