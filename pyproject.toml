@@ -5,7 +5,7 @@ description = "Local-first MCP server for your email over IMAP/SMTP, with instit
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
-authors = [{ name = "posta-mcp contributors" }]
+authors = [{ name = "Ege Kutlu" }]
 keywords = ["mcp", "model-context-protocol", "email", "imap", "smtp", "bogazici", "bumail"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -28,9 +28,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/OWNER/posta-mcp"
-Repository = "https://github.com/OWNER/posta-mcp"
-Issues = "https://github.com/OWNER/posta-mcp/issues"
+Homepage = "https://github.com/kutluege/bogazici_postanesi"
+Repository = "https://github.com/kutluege/bogazici_postanesi"
+Issues = "https://github.com/kutluege/bogazici_postanesi/issues"
 
 [project.scripts]
 posta-mcp = "posta_mcp.cli:main"

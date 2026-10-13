@@ -1,11 +1,11 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.OWNER/posta-mcp",
+  "name": "io.github.kutluege/posta-mcp",
   "title": "posta-mcp",
   "description": "Local IMAP/SMTP email MCP server with a Bogazici University preset; sending is opt-in.",
   "version": "0.1.0",
   "repository": {
-    "url": "https://github.com/OWNER/posta-mcp",
+    "url": "https://github.com/kutluege/bogazici_postanesi",
     "source": "github"
   },
   "packages": [

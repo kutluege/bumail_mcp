@@ -143,7 +143,7 @@ def test_manifest_lists_every_registered_tool_and_prompt():
 def test_server_json_registry_shape():
     s = load_json("server.json")
     assert re.fullmatch(r"[a-zA-Z0-9.-]+/[a-zA-Z0-9._-]+", s["name"])
-    assert s["name"] == "io.github.OWNER/posta-mcp"
+    assert s["name"] == "io.github.kutluege/posta-mcp"
     assert len(s["description"]) <= 100
     assert s["version"] == __version__
     (pkg,) = s["packages"]
@@ -159,10 +159,34 @@ def test_server_json_registry_shape():
     assert env["POSTA_ALLOW_SEND"]["default"] == "false"
 
 
-def test_readme_carries_registry_ownership_marker_and_disclaimers():
+def test_readme_carries_registry_ownership_marker_and_turkish_disclaimers():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     name = load_json("server.json")["name"]
-    assert f"<!-- mcp-name: {name} -->" in readme.splitlines()
+    assert readme.splitlines()[0] == f"<!-- mcp-name: {name} -->"
+    lowered = " ".join(readme.lower().split())
+    for phrase in (
+        "resmi değildir",
+        "onaylanmamıştır",
+        "kabul edilebilir kullanım",
+        "yapay zekâ sağlayıcısına",
+        "yanlış özetleyebilir",
+        "varsayılan olarak kapalıdır",
+        "senin onayını",
+        "sen sorumlusun",
+        "garanti",
+        "unverified",
+        "henüz doğrulanmadı",
+        "mit",
+        "hoca-ozet",
+        "ogrenci-ozet",
+        "bana-ozet",
+        "docs/readme.en.md",
+    ):
+        assert phrase in lowered, phrase
+
+
+def test_english_readme_carries_disclaimers():
+    readme = (ROOT / "docs" / "README.en.md").read_text(encoding="utf-8")
     lowered = " ".join(readme.lower().split())  # line breaks do not matter
     for phrase in (
         "unofficial",

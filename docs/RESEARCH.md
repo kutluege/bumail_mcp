@@ -260,7 +260,7 @@ Sources: https://github.com/modelcontextprotocol/mcpb (MANIFEST.md, CLI.md, sche
 - **CLI:** `npm install -g @anthropic-ai/mcpb`; `mcpb init`, `mcpb validate manifest.json`, `mcpb pack <dir> [output.mcpb]` (ZIP; honors `.mcpbignore`; exclude `.venv`,
   `tests/`, `docs/`), also `mcpb sign|verify|info|unsign`.
 
-Minimal manifest, validated with `jsonschema` against `mcpb-manifest-v0.4.schema.json` (OWNER is a placeholder):
+Minimal manifest, validated with `jsonschema` against `mcpb-manifest-v0.4.schema.json`:
 ```json
 {
   "$schema": "https://raw.githubusercontent.com/modelcontextprotocol/mcpb/main/schemas/mcpb-manifest-v0.4.schema.json",
@@ -270,9 +270,9 @@ Minimal manifest, validated with `jsonschema` against `mcpb-manifest-v0.4.schema
   "version": "0.1.0",
   "description": "Local-first MCP server for your email over IMAP/SMTP, with a Bogazici University (BUmail) preset.",
   "long_description": "Unofficial. Reads and drafts mail over IMAP; sending is off by default and always needs your confirmation.",
-  "author": { "name": "OWNER" },
+  "author": { "name": "Ege Kutlu" },
   "license": "MIT",
-  "repository": { "type": "git", "url": "https://github.com/OWNER/posta-mcp" },
+  "repository": { "type": "git", "url": "https://github.com/kutluege/bogazici_postanesi" },
   "server": {
     "type": "uv",
     "entry_point": "src/posta_mcp/__main__.py",
@@ -321,7 +321,7 @@ Sources: https://github.com/modelcontextprotocol/registry (docs/reference/server
 - **PyPI package entry:** `registryType: "pypi"`, `identifier` (PyPI name), `version`, `transport: {"type":"stdio"}`; optional `registryBaseUrl`
   (`https://pypi.org` only), `runtimeHint: "uvx"`, `packageArguments`, `environmentVariables[]` (`name`, `description`, `isRequired`, `isSecret`, `default`).
 - **PyPI ownership verification:** the package README (= PyPI long description) must contain `mcp-name: <exact server.json name>`, may be an HTML comment on its own line:
-  `<!-- mcp-name: io.github.OWNER/posta-mcp -->`. The token must be followed by newline/whitespace/tag/`-->` (not a trailing period). The README must be in the
+  `<!-- mcp-name: io.github.kutluege/posta-mcp -->`. The token must be followed by newline/whitespace/tag/`-->` (not a trailing period). The README must be in the
   *published* version's metadata, so publish to PyPI first, then `mcp-publisher publish`.
 - **Publishing:** `mcp-publisher init | login github | validate | publish` (binary from the registry GitHub releases or Homebrew). Registry is in preview.
 
@@ -329,11 +329,11 @@ Minimal `server.json`, validated against the 2025-12-11 schema:
 ```json
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.OWNER/posta-mcp",
+  "name": "io.github.kutluege/posta-mcp",
   "title": "posta-mcp",
   "description": "Local IMAP/SMTP email MCP server with a Bogazici University preset; sending is opt-in.",
   "version": "0.1.0",
-  "repository": { "url": "https://github.com/OWNER/posta-mcp", "source": "github" },
+  "repository": { "url": "https://github.com/kutluege/bogazici_postanesi", "source": "github" },
   "packages": [
     {
       "registryType": "pypi",
@@ -353,7 +353,7 @@ Minimal `server.json`, validated against the 2025-12-11 schema:
   ]
 }
 ```
-README must carry `<!-- mcp-name: io.github.OWNER/posta-mcp -->`. Check `uvx posta-mcp serve` works (entry point `posta-mcp = posta_mcp.cli:main`; bare `posta-mcp` should also default to `serve`).
+README must carry `<!-- mcp-name: io.github.kutluege/posta-mcp -->`. Check `uvx posta-mcp serve` works (entry point `posta-mcp = posta_mcp.cli:main`; bare `posta-mcp` should also default to `serve`).
 
 ## 5. Boğaziçi University mail (UNVERIFIED until live test)
 

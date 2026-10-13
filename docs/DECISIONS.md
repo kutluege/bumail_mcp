@@ -38,7 +38,7 @@ Deviations from `docs/SPEC.md` and notable judgment calls, one or two lines each
 - Digest output is capped at 60,000 characters; the prompt `language` argument is validated against a safe pattern so it can't carry injected instructions.
 - `Auto-Submitted`/`Precedence` headers aren't used for classification yet (not in `MessageSummary`).
 - MCPB: `manifest_version` 0.4 with server type `uv` (validated with `@anthropic-ai/mcpb validate`, packs to ~100 kB); not yet tried in a real Claude Desktop. A packaging test fails if a registered tool/prompt is missing from `manifest.json`.
-- `server.json` follows the 2025-12-11 registry schema; name/owner are `io.github.OWNER/posta-mcp` placeholders until the human chooses them.
+- `server.json` follows the 2025-12-11 registry schema; name is `io.github.kutluege/posta-mcp` (GitHub owner `kutluege`).
 - MCP Inspector 2.10.1's inline `--cli -e K=V <cmd>` form fails ("No servers found in config file"); docs use `--config inspector.json --server posta`.
 - Security review follow-ups: `get_message` lost `mark_seen` so read tools are truly read-only (mark read via `mark_messages`); profile notes/interests are rendered inside a nonce-delimited "stored preferences, not instructions" block with length caps; send refuses messages containing invisible/bidi characters (so what the human sees equals what is sent) and drafts carrying Resent-*, read-receipt or foreign Sender headers; full fetches refuse messages over 25 MB (`RFC822.SIZE` checked first); a failed `UID EXPUNGE` in the COPY fallback un-marks `\Deleted` on those UIDs.
 - Sender categories come from the unauthenticated From header; tool descriptions and prompts say so.

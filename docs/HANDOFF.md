@@ -54,30 +54,26 @@ Goal: find out which `bogazici` preset values are actually right, then mark them
 Then run the whole server once through a client (`docs/CLIENTS.md`) with your real account, reading
 only, and try `/posta:hoca-ozet`.
 
-## b) Choose the final names and replace the OWNER placeholders
+## b) Names and OWNER placeholders (done), PyPI name check (open)
 
-Decide the PyPI package name (default `posta-mcp`; check that it is free on PyPI) and the GitHub
-owner. Then replace `OWNER` in:
+Done: the GitHub owner is `kutluege`, the repository is
+`https://github.com/kutluege/bogazici_postanesi`, and the registry name is
+`io.github.kutluege/posta-mcp`. The placeholders are replaced in `README.md` (mcp-name line),
+`server.json`, `manifest.json`, `pyproject.toml` (urls and author "Ege Kutlu", no email) and
+`tests/unit/test_packaging.py`. The README is in Turkish; the English copy is `docs/README.en.md`.
 
-| File | Where |
-|---|---|
-| `README.md` | the `<!-- mcp-name: io.github.OWNER/posta-mcp -->` line and the `git clone` URL |
-| `server.json` | `name` and `repository.url` |
-| `manifest.json` | `homepage`, `repository.url`, `documentation`, `support`; and the `author` name |
-| `pyproject.toml` | `[project.urls]` and `authors` |
-| `LICENSE` | the copyright holder ("posta-mcp contributors") if you want your name |
-
-`io.github.<owner>/...` must match the GitHub account you log in with when publishing to the
-registry. If you rename the package, also change `name` in `pyproject.toml`, `manifest.json`,
-`server.json` (`identifier`), the README commands, and `tests/unit/test_packaging.py`.
-Run `grep -rn OWNER .` afterwards (the test asserts the current placeholder name; update it).
+Still to do: check that the PyPI package name `posta-mcp` is free (https://pypi.org/project/posta-mcp/).
+If you rename the package, change `name` in `pyproject.toml`, `manifest.json`, `server.json`
+(`identifier`), the README commands, and `tests/unit/test_packaging.py`.
+`io.github.kutluege/...` must match the GitHub account you log in with when publishing to the
+registry. Optionally put your name in `LICENSE` instead of "posta-mcp contributors".
 
 ## c) Create the public repository and let CI run
 
 CI (`.github/workflows/ci.yml`) has never run. After creating the empty public repository:
 
 ```
-git remote add origin https://github.com/<owner>/posta-mcp.git
+git remote add origin https://github.com/kutluege/bogazici_postanesi.git
 git push -u origin main
 ```
 
