@@ -1,0 +1,18 @@
+From: Duyuru Test <duyuru.test@bogazici.edu.tr>
+To: kullanici.test@std.bogazici.edu.tr
+Subject: Yemekhane duyurusu
+Date: Mon, 02 Mar 2026 10:15:00 +0300
+Message-ID: <fx-06@fixtures.test>
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="alt-6"
+
+--alt-6
+Content-Type: text/plain; charset=utf-8
+
+ 
+--alt-6
+Content-Type: text/html; charset=utf-8
+Content-Transfer-Encoding: 8bit
+
+<html><head><title>Duyuru</title><style>p{color:red}</style></head><body><p>Merhaba <b>öğrenciler</b>,</p><p>Duyuru: <a href="https://www.bogazici.edu.tr/duyuru">Güney Kampüs</a> yemekhanesi yarın kapalı.</p><ul><li>Çay</li><li>Şeker</li></ul>&ccedil;&#351;<br>Son satır</body></html>
+--alt-6--

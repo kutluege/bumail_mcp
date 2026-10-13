@@ -1,0 +1,46 @@
+From: Ek Test <ek.test@bogazici.edu.tr>
+To: kullanici.test@std.bogazici.edu.tr
+Subject: =?utf-8?B?RGVycyBwcm9ncmFtxLEgdmUgbm90bGFy?=
+Date: Mon, 02 Mar 2026 10:15:00 +0300
+Message-ID: <fx-09@fixtures.test>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="mix-9"
+
+--mix-9
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 8bit
+
+Ekte ders programÄ± var.
+
+--mix-9
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment;
+ filename*=utf-8''Ders%20Program%C4%B1%20%C5%9Eubat.txt
+
+UGF6YXJ0ZXNpOiBGaXppaw0KU2FsxLE6IEtpbXlhIMOHYWzEscWfbWFzxLENCg==
+--mix-9
+Content-Type: text/csv; charset=windows-1254
+Content-Transfer-Encoding: 8bit
+Content-Disposition: attachment;
+ filename*=windows-1254''%DD%FEleri%20%D6%F0renci.csv
+
+ad;not
+Ýpek;90
+Þükrü;85
+Çaðlar;70
+
+--mix-9
+Content-Type: application/pdf
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="=?utf-8?B?VHJhbnNrcmlwdCDDh8Sxa3TEsXPEsS5wZGY=?="
+
+JVBERi0xLjQgZmFrZSB0ZXN0IGNvbnRlbnQK
+--mix-9
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: attachment;
+ filename*0*=utf-8''Uzun%20Dosya;
+ filename*1*=%20Ad%C4%B1.txt
+
+plain ascii attachment
+--mix-9--
