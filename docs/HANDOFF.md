@@ -4,6 +4,12 @@ Everything below needs a person: a real mail account, a real GitHub/PyPI identit
 Nothing here has been published or pushed, CI has never run, and no preset value has been checked
 against a live server.
 
+## Status at handoff
+
+- M0–M5 are done. Locally there are 552 tests passing against GreenMail (`POSTA_REQUIRE_GREENMAIL=1`), with ruff lint and format clean. Every non-negotiable has tests, and a separate read-only security review found no violations; its smaller findings are fixed (see `docs/DECISIONS.md`).
+- MCP Inspector (CLI, both protocol eras) and Claude Code (`claude -p` with `--mcp-config`) were run against GreenMail with the `bogazici` preset. Read tools, the three summaries and the send refusal all worked, and the model recognized and ignored the prompt-injection test email.
+- Not yet tested, and it needs you: the **send confirmation dialog** in interactive Claude Code. Do this against GreenMail before using a real account. Follow `docs/TESTING.md` to start GreenMail, then point Claude Code at it as in `docs/CLIENTS.md`, adding `POSTA_ALLOW_SEND=1`. Ask it to send a mail to `hoca@bogazici.test` and check that the dialog shows the exact recipients and body. Then check that Decline sends nothing.
+
 ## a) Run the live verification (M6)
 
 Goal: find out which `bogazici` preset values are actually right, then mark them `verified = true`.
