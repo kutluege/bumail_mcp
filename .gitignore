@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.venv/
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+# GreenMail runtime: downloaded jars/JDK, generated test keystore and CA
+.greenmail/
+*.mcpb
