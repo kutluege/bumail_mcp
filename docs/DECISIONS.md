@@ -16,3 +16,8 @@ Deviations from `docs/SPEC.md` and notable judgment calls, one or two lines each
 - CI actions are pinned by commit SHA; CI installs with `uv sync --locked` and checks `ruff format`.
 - Send confirmation uses the SDK resolver/`Resolve` elicitation pattern because plain `ctx.elicit()` raises `NoBackChannelError` on the 2026-07-28 protocol that Claude Code uses.
 - Boğaziçi presets: login = local part, separate student/staff host variants by email domain (research: university-hosted, plain IMAP auth, no OAuth). All unverified.
+- `iso-8859-9`/`latin5` are decoded as windows-1254 (a strict superset, as browsers do). Mail labelled latin-1/ascii/cp1252 but containing ý/ð/þ/Ý/Ð/Þ is decoded as windows-1254 (common Turkish mislabel); genuine Latin-1 with those letters is misread.
+- Zero-width, bidi-override and Unicode tag characters are stripped from decoded text (ASCII-smuggling defence). HTML hidden via display:none, visibility:hidden, font-size:0, opacity:0, mso-hide, off-screen positioning or `hidden` is dropped; white-on-white is not (legitimate mail uses it).
+- Untrusted content is wrapped with a per-call random nonce in both delimiters; header fields (from, subject) are inside the wrapper too.
+- SMTP must send `send_bytes(msg)` (no Bcc header) to `envelope_recipients(msg)`; drafts keep Bcc via `message_bytes(msg)`.
+- Reply attribution line is English; `Ynt:` folds like `Re:`. Non-ASCII local parts are rejected; IDN domains go out as punycode.

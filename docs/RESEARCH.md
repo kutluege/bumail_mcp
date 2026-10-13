@@ -25,16 +25,27 @@ published JSON Schema, or read the official primary source. Everything about BoÄ
 ```python
 from mcp.server.mcpserver import MCPServer, Context
 from mcp.types import ToolAnnotations
+
 srv = MCPServer("posta-mcp", instructions="...", version="0.1.0")
 
-@srv.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False,
-                                      idempotent_hint=True, open_world_hint=True))
-def get_message(folder: str, uid: int) -> MessageModel: ...   # pydantic return => outputSchema + structuredContent
 
-@srv.prompt(name="hoca-ozet", description="...")               # args come from the function signature
-def hoca_ozet(days: int = 7) -> str: ...                       # -> one user message; prompt args arrive as strings on the wire, SDK coerces
+@srv.tool(
+    annotations=ToolAnnotations(
+        read_only_hint=True, destructive_hint=False, idempotent_hint=True, open_world_hint=True
+    )
+)
+def get_message(
+    folder: str, uid: int
+) -> MessageModel: ...  # pydantic return => outputSchema + structuredContent
 
-srv.run()          # stdio is the default transport; also srv.run("stdio") / await srv.run_stdio_async()
+
+@srv.prompt(name="hoca-ozet", description="...")  # args come from the function signature
+def hoca_ozet(
+    days: int = 7,
+) -> str: ...  # -> one user message; prompt args arrive as strings on the wire, SDK coerces
+
+
+srv.run()  # stdio is the default transport; also srv.run("stdio") / await srv.run_stdio_async()
 ```
 Verified: annotations round-trip (`tool.annotations.read_only_hint` etc.); a pydantic return type yields
 `output_schema` and `result.structured_content == {...}`; a `str` return is wrapped as `{"result": "..."}`;
@@ -89,47 +100,69 @@ from pydantic import BaseModel, Field
 
 SENT: list[str] = []
 
+
 class Confirm(BaseModel):
     confirm: bool = Field(description="Send this exact message?")
+
 
 def _can_elicit(ctx: Context) -> bool:
     caps = ctx.client_capabilities
     return bool(caps and caps.elicitation and caps.elicitation.form is not None)
 
-def ask_confirmation(to: str, body: str, ctx: Context) -> Elicit[Confirm]:   # tool args by name
+
+def ask_confirmation(to: str, body: str, ctx: Context) -> Elicit[Confirm]:  # tool args by name
     if not _can_elicit(ctx):
         raise ToolError("Client cannot confirm sends (no elicitation). Create a draft instead.")
     return Elicit(f"To: {to}\n\n{body}\n\nSend?", Confirm)
 
+
 def build_server() -> MCPServer:
     srv = MCPServer("posta-demo")
-    @srv.tool(annotations=ToolAnnotations(read_only_hint=False, destructive_hint=False,
-                                          idempotent_hint=False, open_world_hint=True))
-    async def send_message(to: str, body: str,
-                           decision: Annotated[ElicitationResult[Confirm], Resolve(ask_confirmation)]) -> str:
+
+    @srv.tool(
+        annotations=ToolAnnotations(
+            read_only_hint=False,
+            destructive_hint=False,
+            idempotent_hint=False,
+            open_world_hint=True,
+        )
+    )
+    async def send_message(
+        to: str,
+        body: str,
+        decision: Annotated[ElicitationResult[Confirm], Resolve(ask_confirmation)],
+    ) -> str:
         if decision.action != "accept" or not decision.data.confirm:
             return f"NOT SENT ({decision.action})"
-        SENT.append(to); return "SENT"
+        SENT.append(to)
+        return "SENT"
+
     return srv
 
-def _client(srv, answer, mode):               # answer: None => client WITHOUT elicitation capability
+
+def _client(srv, answer, mode):  # answer: None => client WITHOUT elicitation capability
     async def cb(ctx, params):
         if answer == "accept":
             return ElicitResult(action="accept", content={"confirm": True})
-        return ElicitResult(action=answer)    # "decline" | "cancel"
+        return ElicitResult(action=answer)  # "decline" | "cancel"
+
     return Client(srv, mode=mode, **({"elicitation_callback": cb} if answer else {}))
 
+
 @pytest.fixture(params=["asyncio"])
-def anyio_backend(request): return request.param   # anyio's pytest plugin is installed; trio is not
+def anyio_backend(request):
+    return request.param  # anyio's pytest plugin is installed; trio is not
+
 
 @pytest.mark.anyio
-@pytest.mark.parametrize("mode", ["legacy", "auto"])          # handshake era and modern era
+@pytest.mark.parametrize("mode", ["legacy", "auto"])  # handshake era and modern era
 @pytest.mark.parametrize("answer,sent", [("accept", True), ("decline", False), ("cancel", False)])
 async def test_elicit_paths(mode, answer, sent):
     SENT.clear()
     async with _client(build_server(), answer, mode) as c:
         r = await c.call_tool("send_message", {"to": "a@example.org", "body": "hi"})
     assert (SENT == ["a@example.org"]) is sent and not r.is_error
+
 
 @pytest.mark.anyio
 @pytest.mark.parametrize("mode", ["legacy", "auto"])
