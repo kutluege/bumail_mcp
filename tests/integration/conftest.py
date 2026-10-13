@@ -26,6 +26,7 @@ import os
 import re
 import socket
 import ssl
+import sys
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 from email.message import EmailMessage
@@ -38,9 +39,10 @@ _SCRIPT = Path(__file__).resolve().parents[2] / "scripts" / "greenmail.py"
 _spec = importlib.util.spec_from_file_location("posta_greenmail_script", _SCRIPT)
 assert _spec and _spec.loader
 _gm = importlib.util.module_from_spec(_spec)
+sys.modules[_spec.name] = _gm  # dataclasses need the module registered
 _spec.loader.exec_module(_gm)  # single source of truth for ports/users/paths
 
-HOST = "localhost"  # must match a SAN of the test certificate
+HOST = "127.0.0.1"  # a SAN of the test cert; "localhost" is slow on Windows (tries ::1 first)
 
 
 @dataclass(frozen=True)
@@ -78,8 +80,8 @@ def pytest_collection_modifyitems(config, items):
             item.add_marker(pytest.mark.greenmail)
 
 
-def _reachable() -> bool:
-    for port in (_gm.IMAPS_PORT, _gm.SMTPS_PORT):
+def _reachable(inst) -> bool:
+    for port in (inst.imaps_port, inst.smtps_port):
         try:
             with socket.create_connection((HOST, port), timeout=2):
                 pass
@@ -91,16 +93,18 @@ def _reachable() -> bool:
 @pytest.fixture(scope="session")
 def greenmail() -> GreenmailInfo:
     required = os.environ.get("POSTA_REQUIRE_GREENMAIL") == "1"
+    inst = _gm.get_instance()  # honours POSTA_GREENMAIL_INSTANCE
+    hint = f" --instance {inst.name}" if inst.name else ""
     problem = None
     if not _gm.CA_PEM.exists():
         problem = f"{_gm.CA_PEM} missing (run: uv run python scripts/greenmail.py certs)"
-    elif not _reachable():
-        problem = "GreenMail not reachable (run: uv run python scripts/greenmail.py start)"
+    elif not _reachable(inst):
+        problem = f"GreenMail not reachable (run: uv run python scripts/greenmail.py start{hint})"
     if problem:
         if required:
             pytest.fail(f"POSTA_REQUIRE_GREENMAIL=1 but {problem}", pytrace=False)
         pytest.skip(problem)
-    return GreenmailInfo(HOST, _gm.IMAPS_PORT, _gm.SMTPS_PORT, _gm.CA_PEM, dict(_gm.USERS))
+    return GreenmailInfo(HOST, inst.imaps_port, inst.smtps_port, _gm.CA_PEM, dict(_gm.USERS))
 
 
 def _connect(gm: GreenmailInfo, user: str) -> imapclient.IMAPClient:
