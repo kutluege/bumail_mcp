@@ -10,3 +10,4 @@ build/
 .greenmail/
 *.mcpb
 .claude/
+.claude/settings.local.json
