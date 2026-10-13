@@ -1,0 +1,44 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.OWNER/posta-mcp",
+  "title": "posta-mcp",
+  "description": "Local IMAP/SMTP email MCP server with a Bogazici University preset; sending is opt-in.",
+  "version": "0.1.0",
+  "repository": {
+    "url": "https://github.com/OWNER/posta-mcp",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "pypi",
+      "registryBaseUrl": "https://pypi.org",
+      "identifier": "posta-mcp",
+      "version": "0.1.0",
+      "runtimeHint": "uvx",
+      "transport": { "type": "stdio" },
+      "packageArguments": [{ "type": "positional", "value": "serve" }],
+      "environmentVariables": [
+        {
+          "name": "POSTA_PRESET",
+          "description": "Institution preset: bogazici or generic",
+          "default": "bogazici"
+        },
+        {
+          "name": "POSTA_EMAIL",
+          "description": "Your full email address",
+          "isRequired": true
+        },
+        {
+          "name": "POSTA_PASSWORD",
+          "description": "Mailbox or app password (or store it in the OS keychain with `posta-mcp setup`)",
+          "isSecret": true
+        },
+        {
+          "name": "POSTA_ALLOW_SEND",
+          "description": "Set to true to allow sending; each send still needs your confirmation",
+          "default": "false"
+        }
+      ]
+    }
+  ]
+}
