@@ -8,8 +8,6 @@ from mcp_call import eml
 
 from posta_mcp.imap import Mailbox
 
-pytest_plugins = ["mcp_call"]  # provides the `tool` fixture
-
 SEEN = b"\\Seen"
 FLAGGED = b"\\Flagged"
 DELETED = b"\\Deleted"

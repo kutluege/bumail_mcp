@@ -7,8 +7,6 @@ from datetime import date, timedelta
 
 from mcp_call import eml
 
-pytest_plugins = ["mcp_call"]  # provides the `tool` fixture
-
 SEEN = b"\\Seen"
 
 
@@ -47,15 +45,14 @@ def test_reading_leaves_seen_unset_non_negotiable_6(tool, seed_message, greenmai
     uid = seed_message(greenmail.student, eml("from_faculty.eml"))
     tool("search_messages")
     tool("get_message", folder="INBOX", uid=uid)
-    tool("get_message", folder="INBOX", uid=uid, mark_seen=False)
     assert SEEN not in flags_of(imap_client, greenmail.student, uid)
 
 
-def test_get_message_mark_seen_sets_seen(tool, seed_message, greenmail, imap_client):
+def test_get_message_cannot_mark_seen(tool, seed_message, greenmail, imap_client):
     uid = seed_message(greenmail.student, eml("from_faculty.eml"))
-    out = tool("get_message", folder="INBOX", uid=uid, mark_seen=True)
-    assert not out.is_error
-    assert SEEN in flags_of(imap_client, greenmail.student, uid)
+    out = tool("get_message", folder="INBOX", uid=uid, mark_seen=True)  # no such parameter
+    assert not out.is_error  # the stray argument is ignored, and it changes nothing
+    assert SEEN not in flags_of(imap_client, greenmail.student, uid)
 
 
 def test_search_filters_order_and_limit(tool, seed_message, greenmail):

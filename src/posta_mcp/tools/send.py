@@ -50,7 +50,9 @@ from pydantic import BaseModel, Field
 
 from posta_mcp import compose, smtp
 from posta_mcp.logs import redact
+from posta_mcp.mime import strip_invisible
 from posta_mcp.tools._common import SEND, tool_errors
+from posta_mcp.untrusted import one_line
 
 log = logging.getLogger(__name__)
 
@@ -140,11 +142,17 @@ class _Store:
             del self._items[key]
 
     def get_or_create(self, key: str, make: Any) -> Prepared:
+        """The entry for ``key``; ``make`` (which may do IMAP I/O) runs outside the lock.  If
+        another thread stored an entry meanwhile, that one wins so every round shows the same
+        message."""
         with self._lock:
             self._sweep()
-            if key not in self._items:
-                self._items[key] = make()
-            return self._items[key]
+            if key in self._items:
+                return self._items[key]
+        made = make()
+        with self._lock:
+            self._sweep()
+            return self._items.setdefault(key, made)
 
     def pop(self, key: str) -> Prepared | None:
         with self._lock:
@@ -197,8 +205,60 @@ def _describe_parts(msg: EmailMessage) -> tuple[list[str], list[str]]:
     return blocks, attachments
 
 
+# Headers that redirect, re-address or report on a message without showing up in the dialog.
+_REFUSED_HEADERS = ("disposition-notification-to", "return-receipt-to")
+# Shown in the dialog or plain transport plumbing; any other header name is listed by name.
+_PLAIN_HEADERS = frozenset(
+    "from to cc bcc subject date message-id in-reply-to references mime-version content-type "
+    "content-transfer-encoding content-disposition reply-to sender".split()
+)
+
+
+def _check_headers(msg: EmailMessage, account: str) -> None:
+    """Refuse headers that could send mail or receipts somewhere the dialog does not show."""
+    names = [str(k) for k in msg.keys()]
+    bad = [n for n in names if n.lower().startswith("resent-") or n.lower() in _REFUSED_HEADERS]
+    for value in msg.get_all("Sender", []):
+        try:
+            parsed = compose.parse_address(str(value))
+            same = f"{parsed.username}@{parsed.domain}".lower() == account.lower()
+        except ValueError:
+            same = False
+        if not same:
+            bad.append("Sender")
+    if bad:
+        shown = ", ".join(sorted({one_line(n, 40) for n in bad}))
+        raise ToolError(
+            f"Refusing to send: the message has the header(s) {shown}, which can redirect the "
+            "message or request receipts. Remove them and try again; nothing was sent."
+        )
+
+
+def _check_visible(msg: EmailMessage) -> None:
+    """Refuse zero-width / bidi-override characters anywhere the dialog displays text.
+
+    Rejecting (rather than stripping) keeps what the human sees equal to what is sent."""
+    texts = [str(v) for _, v in msg.items()]
+    for part in msg.walk():
+        if part.is_multipart():
+            continue
+        texts.append(part.get_filename() or "")
+        if (
+            part.get_content_type().startswith("text/")
+            and part.get_content_disposition() != "attachment"
+        ):
+            texts.append(_text_of(part))
+    if any(strip_invisible(t) != t for t in texts):
+        raise ToolError(
+            "Refusing to send: the message contains invisible or text-direction characters "
+            "(zero-width, bidi override), so the confirmation could not show it faithfully. "
+            "Remove them and try again; nothing was sent."
+        )
+
+
 def _confirmation_text(msg: EmailMessage, recipients: tuple[str, ...], wire_sha: str) -> str:
     blocks, attachments = _describe_parts(msg)
+    extra = sorted({one_line(k, 40) for k in msg.keys() if str(k).lower() not in _PLAIN_HEADERS})
     lines = [
         "Review this email. It is sent only if you set the checkbox below to true and accept.",
         "",
@@ -206,7 +266,9 @@ def _confirmation_text(msg: EmailMessage, recipients: tuple[str, ...], wire_sha:
         f"To: {_header(msg, 'To') or '(none)'}",
         f"Cc: {_header(msg, 'Cc') or '(none)'}",
         f"Bcc: {_header(msg, 'Bcc') or '(none)'}",
+        *([f"Reply-To: {_header(msg, 'Reply-To')}"] if msg["Reply-To"] else []),
         f"Subject: {_header(msg, 'Subject')}",
+        *([f"Other headers: {', '.join(extra)}"] if extra else []),
         f"Attachments: {', '.join(attachments) if attachments else 'none'}",
         f"Will be delivered to ({len(recipients)}): {', '.join(recipients)}",
         f"Fingerprint (SHA-256 of the exact bytes to be sent): {wire_sha}",
@@ -222,6 +284,16 @@ def _prepare(msg: EmailMessage, sender: str, *, draft: tuple[str, int] | None = 
         raise ToolError("The message has no recipients; nothing was sent.")
     if len(recipients) > MAX_RECIPIENTS:
         raise ToolError(f"Refusing to send to more than {MAX_RECIPIENTS} recipients at once.")
+    for recipient in recipients:  # only plain, validated addresses ever reach SendResult
+        try:
+            parsed = compose.parse_address(recipient)
+            plain = f"{parsed.username}@{parsed.domain}".lower() == recipient.lower()
+        except ValueError:
+            plain = False
+        if not plain:
+            raise ToolError("A recipient is not a plain valid email address; nothing was sent.")
+    _check_headers(msg, sender)
+    _check_visible(msg)
     wire = compose.send_bytes(msg)
     wire_sha = hashlib.sha256(wire).hexdigest()
     return Prepared(
@@ -293,7 +365,7 @@ def register(server: MCPServer, deps: Any) -> None:
                 references=draft["References"],
             )
         except ValueError as exc:
-            raise ToolError(f"Invalid message: {exc}") from None
+            raise ToolError(f"Invalid message: {one_line(redact(str(exc)), 200)}") from None
 
     def confirm_message(
         to: list[str],
@@ -419,7 +491,7 @@ def register(server: MCPServer, deps: Any) -> None:
                         result.saved_to_sent = True
                     except Exception as exc:  # noqa: BLE001
                         result.warnings.append(
-                            f"Sent, but saving a copy to Sent failed: {redact(str(exc))[:200]}"
+                            f"Sent, but saving a copy to Sent failed: {one_line(redact(str(exc)), 200)}"
                         )
                 if prepared.draft is not None:
                     folder, uid = prepared.draft
@@ -428,11 +500,11 @@ def register(server: MCPServer, deps: Any) -> None:
                         result.draft_moved_to_trash = True
                     except Exception as exc:  # noqa: BLE001
                         result.warnings.append(
-                            f"Sent, but moving the draft to Trash failed: {redact(str(exc))[:200]}"
+                            f"Sent, but moving the draft to Trash failed: {one_line(redact(str(exc)), 200)}"
                         )
         except Exception as exc:  # noqa: BLE001 - could not even connect
             result.warnings.append(
-                f"Sent, but the mailbox could not be updated: {redact(str(exc))[:200]}"
+                f"Sent, but the mailbox could not be updated: {one_line(redact(str(exc)), 200)}"
             )
 
     @server.tool(annotations=SEND)

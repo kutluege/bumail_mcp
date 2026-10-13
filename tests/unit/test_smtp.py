@@ -42,6 +42,7 @@ class FakeSMTP:
     journal: list[tuple] = []
     offers_starttls = True
     fail_login: Exception | None = None
+    fail_starttls: Exception | None = None
     fail_sendmail: Exception | None = None
     refused: dict = {}
 
@@ -58,6 +59,8 @@ class FakeSMTP:
 
     def starttls(self, context=None):
         type(self).journal.append(("starttls", context))
+        if type(self).fail_starttls:
+            raise type(self).fail_starttls
 
     def login(self, user, password):
         type(self).journal.append(("login", user, password))
@@ -90,7 +93,7 @@ def fakes(monkeypatch):
     for cls in (FakeSMTP, FakeSMTPSSL):
         cls.journal = []
     FakeSMTP.offers_starttls = True
-    FakeSMTP.fail_login = FakeSMTP.fail_sendmail = None
+    FakeSMTP.fail_login = FakeSMTP.fail_sendmail = FakeSMTP.fail_starttls = None
     FakeSMTP.refused = {}
     monkeypatch.setattr(smtplib, "SMTP", FakeSMTP)
     monkeypatch.setattr(smtplib, "SMTP_SSL", FakeSMTPSSL)
@@ -137,6 +140,27 @@ def test_starttls_missing_extension_refuses_before_login_or_send():
     j = names(FakeSMTP.journal)
     assert "login" not in j and "sendmail" not in j and "starttls" not in j
     assert j[-1] in ("quit", "close")  # connection is closed
+
+
+@pytest.mark.parametrize(
+    "exc",
+    [
+        ssl.SSLCertVerificationError(1, "bad cert " + PASSWORD),
+        smtplib.SMTPResponseException(454, b"TLS not available " + PASSWORD.encode()),
+        smtplib.SMTPServerDisconnected("gone " + PASSWORD),
+        OSError("reset " + PASSWORD),
+    ],
+)
+def test_starttls_failure_never_logs_in_or_sends_and_closes(exc):
+    FakeSMTP.fail_starttls = exc
+    with pytest.raises(smtp.SmtpError) as info:
+        smtp.send(make_config("starttls"), make_msg())
+    j = names(FakeSMTP.journal)
+    assert "starttls" in j
+    assert "login" not in j and "sendmail" not in j  # the password never left the machine
+    assert j[-1] in ("quit", "close")
+    assert PASSWORD not in str(info.value)
+    assert not any(PASSWORD in str(part) for entry in FakeSMTP.journal for part in entry)
 
 
 def test_bcc_in_envelope_but_not_in_bytes_and_never_send_message():

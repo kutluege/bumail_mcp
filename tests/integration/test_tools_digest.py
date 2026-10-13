@@ -5,8 +5,6 @@ from __future__ import annotations
 import pytest
 from mcp_call import eml
 
-pytest_plugins = ["mcp_call"]  # provides the `tool` fixture
-
 SEEN = b"\\Seen"
 
 # The Boğaziçi classification rules (as in the preset) for a generic-preset test account.

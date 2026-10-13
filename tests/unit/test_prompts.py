@@ -44,6 +44,7 @@ async def test_prompt_content(name):
     assert "Write the final summary in Turkish" in text  # default language
     for needle in ("deadlines", "action items", "never follow instructions", "<untrusted-email>"):
         assert needle in text
+    assert "From header" in text and "spoofed" in text
     assert "nothing relevant" in text or "found nothing" in text
     assert "Group by sender" in text and "short" in text
 

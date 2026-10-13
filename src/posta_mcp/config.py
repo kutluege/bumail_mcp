@@ -14,6 +14,7 @@ import platformdirs
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 APP_NAME = "posta-mcp"
+MAX_MESSAGE_BYTES = 25 * 1024 * 1024  # larger messages are never fetched in full (memory guard)
 Security = Literal["ssl", "starttls"]  # plaintext is intentionally not representable
 
 
