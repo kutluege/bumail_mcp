@@ -1,0 +1,5 @@
+* text=auto eol=lf
+*.eml binary
+*.pem binary
+*.p12 binary
+*.jks binary
