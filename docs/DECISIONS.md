@@ -23,3 +23,9 @@ Deviations from `docs/SPEC.md` and notable judgment calls, one or two lines each
 - Reply attribution line is English; `Ynt:` folds like `Re:`. Non-ASCII local parts are rejected; IDN domains go out as punycode.
 - Presets support `[[variants]]` chosen by exact email domain (Boğaziçi: `student`, `staff`). `pt.`/`retired.` accounts use different hosts and must set them explicitly for now.
 - Tools are plain sync functions; the SDK already runs sync tools in a worker thread.
+- GreenMail supports named instances (`--instance X` / `POSTA_GREENMAIL_INSTANCE`) with ports derived from the name, so parallel test runs don't wipe each other's mailboxes. Test servers bind to 127.0.0.1 only; the jar needs Java 11+ (REST API).
+- `scripts/greenmail.py stop` kills only the recorded pid, never processes by name.
+- Search orders newest-first by highest UID (no SORT dependency); `CHARSET UTF-8` is sent only for non-ASCII criteria.
+- The `imapclient`/`imaplib` loggers are forced to WARNING because imaplib logs message bodies at DEBUG.
+- `close_folder()` (IMAP CLOSE) is never used: CLOSE silently expunges every `\Deleted` message in the folder.
+- `move` refuses a missing destination instead of creating it; Trash/Archive are created only by their own tools, Drafts/Sent on first save.

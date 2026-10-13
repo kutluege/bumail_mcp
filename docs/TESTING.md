@@ -25,10 +25,11 @@ If GreenMail is unreachable the tests are **skipped**; with `POSTA_REQUIRE_GREEN
 
 ### Jar mode (default when Docker is absent; Windows/macOS/Linux)
 
-Needs a JDK (for `keytool`) of Java 8 or newer. `scripts/greenmail.py` picks the newest JDK it
-finds (`--java`, `$GREENMAIL_JAVA`, `$JAVA_HOME`, `PATH`, standard install dirs). The pinned
-GreenMail 2.1.14 standalone jar is Java 8 bytecode; it is downloaded from Maven Central into
-`.greenmail/` and verified against a pinned SHA-256.
+Needs a JDK (for `keytool`), **Java 11 or newer recommended**. `scripts/greenmail.py` picks the
+newest JDK it finds (`--java`, `$GREENMAIL_JAVA`, `$JAVA_HOME`, `PATH`, standard install dirs). The
+pinned GreenMail 2.1.14 standalone jar is downloaded from Maven Central into `.greenmail/` and
+verified against a pinned SHA-256. On Java 8 the IMAPS/SMTPS ports still work, but GreenMail's REST
+API thread dies (it needs Java 11 classes) and the script warns.
 
 ```
 uv run python scripts/greenmail.py certs      # keystore + .greenmail/ca.pem (once)
@@ -39,6 +40,34 @@ uv run python scripts/greenmail.py stop
 
 Other subcommands: `status`, `capabilities` (prints the live IMAP CAPABILITY / SMTP EHLO lines),
 `certs --force` (regenerate). Log: `.greenmail/greenmail.log`.
+
+### Parallel workers: named instances
+
+Several agents/workers on one machine must not share one GreenMail, because the per-test fixture
+wipes every test user's mailbox. Give each worker its own **instance**: its own ports, pid file and
+log, sharing the same keystore and `ca.pem` (generated once; concurrent `certs`/`start` calls are
+serialised with a lock file and publish the files atomically).
+
+Each parallel worker exports a distinct `POSTA_GREENMAIL_INSTANCE`, then runs `start --instance X`
+before its tests and `stop --instance X` after:
+
+```
+export POSTA_GREENMAIL_INSTANCE=worker1        # PowerShell: $env:POSTA_GREENMAIL_INSTANCE = "worker1"
+uv run python scripts/greenmail.py start --instance worker1
+uv run pytest tests/integration -q -m greenmail   # fixtures read the env var for the ports
+uv run python scripts/greenmail.py stop --instance worker1
+```
+
+`--instance` defaults to `$POSTA_GREENMAIL_INSTANCE`; empty means the default instance (3993/3465,
+`greenmail.pid`, `greenmail.log`). Ports for a name are derived deterministically:
+`base = 13000 + 3 * (crc32(name) % 2000)`, then IMAPS = base, SMTPS = base + 1, REST API = base + 2
+(range 13000-18999, clear of the defaults). `status --instance X` prints them. Pid/log files are
+`.greenmail/greenmail-X.pid` / `.log`; Docker container `posta-greenmail-X`. Names are `[A-Za-z0-9_-]`,
+at most 40 chars. If two names hash to the same ports, `start` refuses (ports in use without that
+instance's pid file); pick another name. `stop --instance X` only ever kills the pid recorded for X;
+never kill `java` by image name, that takes down everyone's server.
+
+Servers bind to `127.0.0.1` only (Docker: published on `127.0.0.1`).
 
 ### Docker mode (CI)
 
@@ -56,7 +85,7 @@ The keystore directory is mounted read-only at `/certs` in the container (contai
 
 | Item | Value |
 |---|---|
-| Host used by tests | `localhost` (also valid: `127.0.0.1`) |
+| Host used by tests | `127.0.0.1` (`localhost` is also in the SANs but is slow on Windows: it tries `::1` first) |
 | IMAPS | port 3993 (implicit TLS) |
 | SMTPS | port 3465 (implicit TLS) |
 | CA / certificate (PEM) | `.greenmail/ca.pem` (pass as `POSTA_CA_FILE`) |
