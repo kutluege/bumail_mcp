@@ -77,6 +77,9 @@ class FakeMailbox:
     def __exit__(self, *exc):
         return None
 
+    def ensure_special_folder(self, role):
+        return self.special_folder(role)
+
     def special_folder(self, role):
         return {"sent": "Sent", "drafts": "Drafts", "trash": "Trash"}[role]
 

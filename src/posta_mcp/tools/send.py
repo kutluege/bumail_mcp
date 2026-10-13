@@ -412,7 +412,7 @@ def register(server: MCPServer, deps: Any) -> None:
                 if save:
                     try:
                         mb.append(
-                            mb.special_folder("sent"),
+                            mb.ensure_special_folder("sent"),
                             compose.message_bytes(prepared.msg),
                             (r"\Seen",),
                         )
@@ -424,7 +424,7 @@ def register(server: MCPServer, deps: Any) -> None:
                 if prepared.draft is not None:
                     folder, uid = prepared.draft
                     try:
-                        mb.move(folder, [uid], mb.special_folder("trash"))
+                        mb.move(folder, [uid], mb.ensure_special_folder("trash"))
                         result.draft_moved_to_trash = True
                     except Exception as exc:  # noqa: BLE001
                         result.warnings.append(

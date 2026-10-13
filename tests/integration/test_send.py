@@ -196,6 +196,12 @@ class ImapAdapter:
     def __exit__(self, *exc):
         self.c.logout()
 
+    def ensure_special_folder(self, role):
+        name = self.special_folder(role)
+        if not self.c.folder_exists(name):
+            self.c.create_folder(name)
+        return name
+
     def special_folder(self, role):
         return self.FOLDERS[role]
 
@@ -233,7 +239,6 @@ def mailbox_for(request, greenmail, config_for):
 async def test_sent_copy_is_appended_with_seen(mode, greenmail, mailbox_for, imap_client):
     config, factory = mailbox_for()
     student = imap_client(greenmail.student)
-    student.create_folder("Sent")
     args = {"to": [greenmail.faculty], "bcc": [greenmail.outsider], **ARGS_TEMPLATE}
     async with Client(
         build_server(config, mailbox=factory), mode=mode, elicitation_callback=Asker()
@@ -259,8 +264,6 @@ async def test_send_draft_end_to_end(mode, greenmail, mailbox_for, imap_client, 
         greenmail.student, compose.message_bytes(draft), folder="Drafts", flags=(b"\\Draft",)
     )
     student = imap_client(greenmail.student)
-    student.create_folder("Trash")
-    student.create_folder("Sent")
 
     asker = Asker()
     async with Client(
