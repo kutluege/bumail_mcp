@@ -109,7 +109,9 @@ def available_presets() -> list[str]:
 
 def _load_preset(name: str) -> dict[str, Any]:
     if not re.fullmatch(r"[a-z0-9_-]+", name) or name not in available_presets():
-        raise ConfigError(f"Unknown preset '{name[:40]}'. Available: {', '.join(available_presets())}.")
+        raise ConfigError(
+            f"Unknown preset '{name[:40]}'. Available: {', '.join(available_presets())}."
+        )
     text = (resources.files("posta_mcp") / "presets" / f"{name}.toml").read_text("utf-8")
     data = tomllib.loads(text)
     data.pop("name", None)

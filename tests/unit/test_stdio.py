@@ -41,7 +41,10 @@ def test_stdout_is_only_jsonrpc_and_server_info_has_no_secret(tmp_path):
         env.pop(name, None)
     proc = subprocess.Popen(
         [sys.executable, "-m", "posta_mcp"],
-        stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        env=env,
     )
     lines: queue.Queue[bytes] = queue.Queue()
     stderr_chunks: list[bytes] = []
@@ -62,10 +65,17 @@ def test_stdout_is_only_jsonrpc_and_server_info_has_no_secret(tmp_path):
     seen: list[dict] = []
     raw_out: list[bytes] = []
     try:
-        send(_rpc(1, "initialize", {
-            "protocolVersion": "2025-06-18", "capabilities": {},
-            "clientInfo": {"name": "pytest", "version": "0"},
-        }))
+        send(
+            _rpc(
+                1,
+                "initialize",
+                {
+                    "protocolVersion": "2025-06-18",
+                    "capabilities": {},
+                    "clientInfo": {"name": "pytest", "version": "0"},
+                },
+            )
+        )
         init = response(1)
         assert init["result"]["serverInfo"]["name"] == "posta-mcp"
         send(json.dumps({"jsonrpc": "2.0", "method": "notifications/initialized"}))

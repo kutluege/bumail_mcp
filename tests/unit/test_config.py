@@ -26,15 +26,27 @@ def test_generic_needs_hosts(tmp_path):
 
 
 def test_precedence_preset_then_file_then_env(tmp_path):
-    path = write(tmp_path, 'preset = "bogazici"\nemail = "a@std.boun.edu.tr"\n'
-                 '[imap]\nhost = "file.example.org"\nport = 143\nsecurity = "starttls"\n')
+    path = write(
+        tmp_path,
+        'preset = "bogazici"\nemail = "a@std.boun.edu.tr"\n'
+        '[imap]\nhost = "file.example.org"\nport = 143\nsecurity = "starttls"\n',
+    )
     cfg = load_config(env={}, path=path)
-    assert (cfg.imap.host, cfg.imap.port, cfg.imap.security) == ("file.example.org", 143, "starttls")
+    assert (cfg.imap.host, cfg.imap.port, cfg.imap.security) == (
+        "file.example.org",
+        143,
+        "starttls",
+    )
     assert cfg.smtp.host == "mail.boun.edu.tr"  # untouched preset value
     assert cfg.login == "a@std.boun.edu.tr"  # username defaults to email
 
-    env = {"POSTA_IMAP_HOST": "env.example.org", "POSTA_IMAP_PORT": "1993",
-           "POSTA_IMAP_SECURITY": "SSL", "POSTA_USERNAME": "user1", "POSTA_PRESET": "generic"}
+    env = {
+        "POSTA_IMAP_HOST": "env.example.org",
+        "POSTA_IMAP_PORT": "1993",
+        "POSTA_IMAP_SECURITY": "SSL",
+        "POSTA_USERNAME": "user1",
+        "POSTA_PRESET": "generic",
+    }
     cfg = load_config(env=env, path=path)
     assert cfg.preset == "generic"
     assert (cfg.imap.host, cfg.imap.port, cfg.imap.security) == ("env.example.org", 1993, "ssl")

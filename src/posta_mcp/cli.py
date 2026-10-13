@@ -25,7 +25,9 @@ def _toml_str(value: str) -> str:
     return json.dumps(value, ensure_ascii=False)  # a JSON string is a valid TOML basic string
 
 
-def _write_config(path: Path, preset: str, email: str, username: str, hosts: dict[str, str]) -> None:
+def _write_config(
+    path: Path, preset: str, email: str, username: str, hosts: dict[str, str]
+) -> None:
     lines = [f"preset = {_toml_str(preset)}", f"email = {_toml_str(email)}"]
     if username != email:
         lines.append(f"username = {_toml_str(username)}")
@@ -42,8 +44,9 @@ def try_imap_login(config: Config, password: str) -> str:
     context = make_ssl_context(config.ca_file)
     try:
         imap = config.imap
-        client = IMAPClient(imap.host, port=imap.port, ssl=imap.security == "ssl",
-                            ssl_context=context, timeout=20)
+        client = IMAPClient(
+            imap.host, port=imap.port, ssl=imap.security == "ssl", ssl_context=context, timeout=20
+        )
         with client:
             if imap.security == "starttls":
                 client.starttls(ssl_context=context)
@@ -128,9 +131,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="posta-mcp", description="Local-first email MCP server.")
     parser.add_argument("--version", action="version", version=f"posta-mcp {__version__}")
     sub = parser.add_subparsers(dest="command")
-    sub.add_parser("serve", help="run the MCP server over stdio (default)").set_defaults(fn=cmd_serve)
+    sub.add_parser("serve", help="run the MCP server over stdio (default)").set_defaults(
+        fn=cmd_serve
+    )
     sub.add_parser("setup", help="store credentials and write config").set_defaults(fn=cmd_setup)
-    sub.add_parser("doctor", help="check config, keychain and IMAP login").set_defaults(fn=cmd_doctor)
+    sub.add_parser("doctor", help="check config, keychain and IMAP login").set_defaults(
+        fn=cmd_doctor
+    )
     args = parser.parse_args(argv)
     return getattr(args, "fn", cmd_serve)(args)
 
