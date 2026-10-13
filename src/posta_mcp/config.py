@@ -60,6 +60,8 @@ class Sending(_Model):
 
 class Config(_Model):
     preset: str = "generic"
+    variant: str = ""  # which of the preset's account types matched the email domain
+    username_style: Literal["email", "localpart"] = "email"
     email: str = ""
     username: str = ""
     imap: Endpoint
@@ -73,7 +75,12 @@ class Config(_Model):
 
     @property
     def login(self) -> str:
-        return self.username or self.email
+        """IMAP/SMTP login: explicit username, else per the preset's username_style."""
+        if self.username:
+            return self.username
+        if self.username_style == "localpart":
+            return self.email.partition("@")[0]
+        return self.email
 
     @property
     def send_enabled(self) -> bool:
@@ -95,10 +102,16 @@ class Config(_Model):
         return [name for name, value in need.items() if not value]
 
 
+def _get(env: Mapping[str, str], name: str) -> str | None:
+    """An env value; empty or whitespace-only counts as unset (MCP hosts pass blanks)."""
+    value = env.get(name, "").strip()
+    return value or None
+
+
 def config_path(env: Mapping[str, str] | None = None) -> Path:
     env = os.environ if env is None else env
-    if env.get("POSTA_CONFIG"):
-        return Path(env["POSTA_CONFIG"])
+    if override := _get(env, "POSTA_CONFIG"):
+        return Path(override)
     return Path(platformdirs.user_config_dir(APP_NAME)) / "config.toml"
 
 
@@ -128,8 +141,19 @@ def _merge(base: dict[str, Any], over: Mapping[str, Any]) -> dict[str, Any]:
     return base
 
 
-def _truthy(value: str) -> bool:
-    return value.strip().lower() in {"1", "true", "yes", "on"}
+_TRUE = {"1", "true", "yes", "on"}
+_FALSE = {"0", "false", "no", "off"}
+
+
+def _env_bool(env: Mapping[str, str], name: str) -> bool | None:
+    value = _get(env, name)
+    if value is None:
+        return None
+    if value.lower() in _TRUE:
+        return True
+    if value.lower() in _FALSE:
+        return False
+    raise ConfigError(f"{name} must be one of 1/true/yes/on or 0/false/no/off.")
 
 
 def _read_user_file(path: Path) -> dict[str, Any]:
@@ -147,36 +171,65 @@ def _read_user_file(path: Path) -> dict[str, Any]:
 def _env_overrides(env: Mapping[str, str]) -> dict[str, Any]:
     out: dict[str, Any] = {}
     for key in ("email", "username"):
-        if env.get(f"POSTA_{key.upper()}"):
-            out[key] = env[f"POSTA_{key.upper()}"]
-    if env.get("POSTA_CA_FILE"):
-        out["ca_file"] = env["POSTA_CA_FILE"]
+        if value := _get(env, f"POSTA_{key.upper()}"):
+            out[key] = value
+    if value := _get(env, "POSTA_CA_FILE"):
+        out["ca_file"] = value
     for proto in ("imap", "smtp"):
         section: dict[str, Any] = {}
         for field in ("host", "port", "security"):
-            value = env.get(f"POSTA_{proto.upper()}_{field.upper()}")
-            if value:
-                section[field] = value.strip().lower() if field == "security" else value.strip()
+            if value := _get(env, f"POSTA_{proto.upper()}_{field.upper()}"):
+                section[field] = value.lower() if field == "security" else value
         if "port" in section:
             if not section["port"].isdigit():
                 raise ConfigError(f"POSTA_{proto.upper()}_PORT must be a number.")
             section["port"] = int(section["port"])
         if section:
             out[proto] = section
-    if "POSTA_ALLOW_SEND" in env:
-        out["sending"] = {"enabled": _truthy(env["POSTA_ALLOW_SEND"])}
+    if (allow := _env_bool(env, "POSTA_ALLOW_SEND")) is not None:
+        out["sending"] = {"enabled": allow}
     return out
 
 
-def load_config(env: Mapping[str, str] | None = None, path: Path | None = None) -> Config:
-    env = os.environ if env is None else env
-    user = _read_user_file(path or config_path(env))
-    preset = env.get("POSTA_PRESET") or user.get("preset") or "generic"
-    data = _merge(_load_preset(preset), user)
-    _merge(data, _env_overrides(env))
+def _pick_variant(variants: list[dict[str, Any]], email: str) -> dict[str, Any] | None:
+    domain = email.rpartition("@")[2].lower()
+    return next((v for v in variants if domain in v["domains"]), None)
+
+
+def _build(user: dict[str, Any], env: Mapping[str, str]) -> Config:
+    preset = _get(env, "POSTA_PRESET") or user.get("preset") or "generic"
+    overrides = _env_overrides(env)
+    email = overrides.get("email") or user.get("email") or ""
+
+    data = _load_preset(preset)
+    variants = data.pop("variants", [])
+    variant = _pick_variant(variants, email)
+    if variant:  # account-type specific hosts: preset base < variant < user file < env
+        _merge(data, {k: variant[k] for k in ("imap", "smtp")})
+    _merge(data, user)
+    _merge(data, overrides)
     data["preset"] = preset
+    data["variant"] = variant["name"] if variant else ""
+
+    has_hosts = data["imap"].get("host") and data["smtp"].get("host")
+    if variants and email and not variant and not has_hosts:
+        expected = ", ".join(d for v in variants for d in v["domains"])
+        raise ConfigError(
+            f"Email domain '{email.rpartition('@')[2][:60]}' matches no '{preset}' account type. "
+            f"Expected an address at: {expected} (or set imap.host and smtp.host yourself)."
+        )
     try:
         return Config.model_validate(data)
     except ValidationError as exc:  # report locations/messages only, never input values
         problems = "; ".join(f"{'.'.join(map(str, e['loc']))}: {e['msg']}" for e in exc.errors())
         raise ConfigError(f"Invalid configuration: {problems}") from None
+
+
+def load_config(env: Mapping[str, str] | None = None, path: Path | None = None) -> Config:
+    env = os.environ if env is None else env
+    return _build(_read_user_file(path or config_path(env)), env)
+
+
+def preview_config(preset: str, email: str) -> Config:
+    """What a preset + email would resolve to, ignoring any existing config file or env."""
+    return _build({"preset": preset, "email": email}, {})

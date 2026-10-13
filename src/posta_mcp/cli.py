@@ -10,7 +10,14 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from posta_mcp import __version__
-from posta_mcp.config import Config, ConfigError, available_presets, config_path, load_config
+from posta_mcp.config import (
+    Config,
+    ConfigError,
+    available_presets,
+    config_path,
+    load_config,
+    preview_config,
+)
 from posta_mcp.credentials import CredentialsError, get_password, has_stored_password, set_password
 from posta_mcp.logs import configure_logging, redact
 from posta_mcp.tls import make_ssl_context
@@ -29,7 +36,7 @@ def _write_config(
     path: Path, preset: str, email: str, username: str, hosts: dict[str, str]
 ) -> None:
     lines = [f"preset = {_toml_str(preset)}", f"email = {_toml_str(email)}"]
-    if username != email:
+    if username:
         lines.append(f"username = {_toml_str(username)}")
     for proto, host in hosts.items():
         lines += ["", f"[{proto}]", f"host = {_toml_str(host)}"]
@@ -79,10 +86,22 @@ def cmd_setup(_: argparse.Namespace) -> int:
     if preset not in presets:
         return _fail(f"unknown preset '{preset[:40]}'.")
     email = input("Email address: ").strip()
-    username = input(f"Login username [{email}]: ").strip() or email
+    try:
+        preview = preview_config(preset, email)  # picks the account type from the email domain
+    except ConfigError as exc:
+        return _fail(str(exc))
+    default_login = preview.login
+    username = input(f"Login username [{default_login}]: ").strip() or default_login
     hosts: dict[str, str] = {}
     if preset == "generic":
         hosts = {"imap": input("IMAP host: ").strip(), "smtp": input("SMTP host: ").strip()}
+    else:
+        imap, smtp = preview.imap, preview.smtp
+        print(f"Account type: {preview.variant or preset}")
+        print(f"  IMAP: {imap.host}:{imap.port} ({imap.security})")
+        print(f"  SMTP: {smtp.host}:{smtp.port} ({smtp.security})")
+        if preview.unverified:
+            print("  (these preset values are unverified; `posta-mcp doctor` will test the login)")
     password = getpass.getpass("Password (not shown, stored in your OS keychain): ")
     if not (email and password):
         return _fail("email and password are required.")
@@ -90,7 +109,8 @@ def cmd_setup(_: argparse.Namespace) -> int:
         set_password(username, password)
     except CredentialsError as exc:
         return _fail(str(exc))
-    _write_config(path, preset, email, username, hosts)
+    # only record a username that differs from what the preset derives from the email
+    _write_config(path, preset, email, "" if username == default_login else username, hosts)
     print(f"Saved settings to {path} (no password in it) and the password to the keychain.")
     try:
         config = load_config()
@@ -108,7 +128,8 @@ def cmd_doctor(_: argparse.Namespace) -> int:
     print(f"posta-mcp {__version__}")
     print(f"config file : {config_path()} ({'found' if config_path().is_file() else 'not found'})")
     print(f"preset      : {config.preset}")
-    print(f"account     : {config.email or '(not set)'}")
+    print(f"account     : {config.email or '(not set)'} ({config.variant or 'no account type'})")
+    print(f"login       : {config.login or '(not set)'}")
     print(f"IMAP        : {config.imap.host}:{config.imap.port} ({config.imap.security})")
     print(f"SMTP        : {config.smtp.host}:{config.smtp.port} ({config.smtp.security})")
     print(f"sending     : {'ENABLED' if config.send_enabled else 'disabled'}")

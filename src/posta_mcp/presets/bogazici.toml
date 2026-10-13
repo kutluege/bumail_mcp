@@ -1,19 +1,51 @@
-# Bogazici University (BUmail) preset.
-# Every section below is UNVERIFIED best-guess data: nothing has been tested against the live
-# servers yet. Flip `verified` to true per section only after a live check (scripts/live_verify.py).
+# Bogazici University (BUmail) preset. Source: docs/RESEARCH.md section 5.
+# Every section is UNVERIFIED: nothing has been tested against the live servers yet.
+# Flip `verified` to true per section only after a live check (scripts/live_verify.py).
 name = "bogazici"
+username_style = "localpart"   # unverified: login is "ad.soyad", not the full address
 
+# Defaults shared by all account types; the matching [[variants]] entry adds the hosts.
 [imap]
+port = 993
+security = "ssl"
+
+[smtp]
+port = 587
+security = "starttls"
+
+# One variant per account type, picked by the email's domain. If the email matches none, the
+# user must set imap.host/smtp.host themselves (or gets an error listing these domains).
+[[variants]]
+name = "student"
+domains = ["std.bogazici.edu.tr"]
+
+[variants.imap]
 verified = false        # unverified
-host = "mail.boun.edu.tr"   # unverified placeholder
+host = "imap.std.bogazici.edu.tr"   # unverified
 port = 993              # unverified
 security = "ssl"        # unverified
 
-[smtp]
+[variants.smtp]
 verified = false        # unverified
-host = "mail.boun.edu.tr"   # unverified placeholder
-port = 465              # unverified
+host = "smtp.std.bogazici.edu.tr"   # unverified
+port = 587              # unverified
+security = "starttls"   # unverified
+
+[[variants]]
+name = "staff"
+domains = ["bogazici.edu.tr", "boun.edu.tr"]
+
+[variants.imap]
+verified = false        # unverified
+host = "imap.bogazici.edu.tr"   # unverified
+port = 993              # unverified
 security = "ssl"        # unverified
+
+[variants.smtp]
+verified = false        # unverified
+host = "smtp.bogazici.edu.tr"   # unverified
+port = 587              # unverified
+security = "starttls"   # unverified
 
 [folders]
 verified = false        # unverified
@@ -24,12 +56,19 @@ archive = "Archive"
 
 [domains]
 verified = false        # unverified
-institution = ["bogazici.edu.tr", "boun.edu.tr"]
-student = ["std.bogazici.edu.tr", "std.boun.edu.tr"]
+institution = [
+  "bogazici.edu.tr", "boun.edu.tr",
+  "pt.bogazici.edu.tr", "retired.bogazici.edu.tr",
+  "alum.bogazici.edu.tr", "alumni.bogazici.edu.tr",
+]
+student = ["std.bogazici.edu.tr"]
 
 [classification]
 verified = false        # unverified
-list_addresses = ["students@list.bogazici.edu.tr"]
+list_addresses = [
+  "students@list.bogazici.edu.tr", "personnel@list.bogazici.edu.tr",
+  "instructor@list.bogazici.edu.tr", "instforum@list.bogazici.edu.tr",
+]
 list_domains = ["list.bogazici.edu.tr"]
-standard_addresses = []
+standard_addresses = ["bilgiislem@bogazici.edu.tr"]
 standard_local_parts = ["noreply", "no-reply", "donotreply", "do-not-reply", "mailer-daemon", "postmaster"]
