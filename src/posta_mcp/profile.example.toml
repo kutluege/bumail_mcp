@@ -1,0 +1,21 @@
+# posta-mcp interest profile (used by the `bana-ozet` / "personalized summary" feature).
+# Copy to profile.toml in the posta-mcp config directory (see `posta-mcp doctor`), or let your
+# assistant manage it with the `update_profile` tool. Non-secret data only: never put
+# passwords or anything private here.
+#
+# Matching ignores case and Turkish diacritics (Güney = GUNEY = güney) and accepts Turkish
+# suffixes (kampüsünde, yemekhanede, tenisçi), so list one form of each word, not every inflection.
+
+notes = "Mostly on Güney Kampüs (South Campus); eat at the yemekhane most days; play tennis."
+
+[[interests]]
+name = "Güney Kampüs"
+keywords = ["güney kampüs", "south campus", "güney yerleşke", "güney kampus"]
+
+[[interests]]
+name = "Yemekhane"
+keywords = ["yemekhane", "cafeteria", "kafeterya", "yemek listesi", "menü", "yemek", "canteen", "dining hall"]
+
+[[interests]]
+name = "Tenis"
+keywords = ["tenis", "tennis", "tenis kortu", "kort", "tennis court"]
