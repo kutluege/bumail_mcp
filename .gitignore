@@ -9,3 +9,4 @@ build/
 # GreenMail runtime: downloaded jars/JDK, generated test keystore and CA
 .greenmail/
 *.mcpb
+.claude/
