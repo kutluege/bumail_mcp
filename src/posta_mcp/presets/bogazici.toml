@@ -59,9 +59,9 @@ verified = false        # unverified
 institution = [
   "bogazici.edu.tr", "boun.edu.tr",
   "pt.bogazici.edu.tr", "retired.bogazici.edu.tr",
-  "alum.bogazici.edu.tr", "alumni.bogazici.edu.tr",
 ]
 student = ["std.bogazici.edu.tr"]
+alumni = ["alum.bogazici.edu.tr", "alumni.bogazici.edu.tr"]
 
 [classification]
 verified = false        # unverified

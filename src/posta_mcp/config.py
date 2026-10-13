@@ -45,6 +45,7 @@ class Folders(_Section):
 class Domains(_Section):
     institution: list[str] = []
     student: list[str] = []
+    alumni: list[str] = []  # never "faculty", even when under an institution domain
 
 
 class Classification(_Section):

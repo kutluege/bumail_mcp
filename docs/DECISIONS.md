@@ -32,3 +32,8 @@ Deviations from `docs/SPEC.md` and notable judgment calls, one or two lines each
 - Send confirmation binding: the resolver builds the message once and parks it in memory keyed by a hash of the tool arguments (drafts: of the draft's raw bytes); the tool body only pops it and sends the stored wire bytes after re-checking their SHA-256 (shown to the user as a fingerprint). Entries expire after 30 min and are single-use.
 - Refusals (sending disabled, client cannot elicit) are `ToolError`s; decline/cancel/unchecked return `status="not_sent"`. Max 50 recipients per send; `send_draft` refuses drafts whose From is not the account.
 - `save_sent`: `auto` currently behaves like `always` (append to Sent with `\Seen`). A failed Sent copy or Trash move after a successful send is a warning, not an error.
+- Classification precedence: list > standard > student > faculty > external. Automated local parts (noreply…) count as `standard` only on institution/student domains, so `noreply@shop.example` can't pass as school mail.
+- Alumni domains (`domains.alumni`) are never `faculty`, even though they sit under an institution domain; they classify as `external`.
+- Profile defaults for known interests (Güney Kampüs, yemekhane, tenis) are applied only when the user adds one without keywords; otherwise they're returned as suggestions, never stored silently. `profile.example.toml` ships as package data.
+- Digest output is capped at 60,000 characters; the prompt `language` argument is validated against a safe pattern so it can't carry injected instructions.
+- `Auto-Submitted`/`Precedence` headers aren't used for classification yet (not in `MessageSummary`).

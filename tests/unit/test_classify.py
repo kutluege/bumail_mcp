@@ -43,7 +43,8 @@ def test_fixtures(rules, fixture, expected):
         ("Hoca@BOGAZICI.edu.TR", "faculty"),
         ("hoca@cmpe.bogazici.edu.tr", "faculty"),  # subdomain
         ("misafir@pt.bogazici.edu.tr", "faculty"),
-        ("mezun@alum.bogazici.edu.tr", "faculty"),  # per the preset's institution list
+        ("mezun@alum.bogazici.edu.tr", "external"),  # alumni are never "faculty"
+        ("mezun@alumni.bogazici.edu.tr", "external"),
         ("eski@boun.edu.tr", "faculty"),
         ("kisi@gmail.com", "external"),
         ("hoca@evilbogazici.edu.tr", "external"),  # not a subdomain

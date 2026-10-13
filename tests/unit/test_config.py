@@ -42,9 +42,8 @@ def test_bogazici_staff_variant(tmp_path, domain):
 
 def test_bogazici_classification_and_domains(tmp_path):
     cfg = bogazici(tmp_path, "a.b@bogazici.edu.tr")
-    assert {"pt.bogazici.edu.tr", "retired.bogazici.edu.tr", "alum.bogazici.edu.tr"} <= set(
-        cfg.domains.institution
-    )
+    assert {"pt.bogazici.edu.tr", "retired.bogazici.edu.tr"} <= set(cfg.domains.institution)
+    assert "alum.bogazici.edu.tr" in cfg.domains.alumni
     assert cfg.domains.student == ["std.bogazici.edu.tr"]
     assert "instforum@list.bogazici.edu.tr" in cfg.classification.list_addresses
     assert cfg.classification.list_domains == ["list.bogazici.edu.tr"]

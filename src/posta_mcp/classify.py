@@ -9,9 +9,9 @@ override any of them in ``config.toml``.  Precedence, first match wins:
                   (``bilgiislem@...``), or the local part is an automated name (``noreply``,
                   ``mailer-daemon``) at an institution or student domain.
 3. ``student``  - sender domain (or a subdomain of it) is a student domain.
-4. ``faculty``  - sender domain (or a subdomain, e.g. ``pt.``/``alum.``) is an institution
-                  domain and none of the above applied: "likely a professor".
-5. ``external`` - anything else.
+4. ``faculty``  - sender domain (or a subdomain, e.g. ``pt.``) is an institution domain, is
+                  not an alumni domain, and none of the above applied: "likely a professor".
+5. ``external`` - anything else (including alumni addresses).
 
 Everything is case-insensitive.  ``Classification.reason`` names the rule that matched and never
 quotes message content, so it is safe to show next to untrusted data.
@@ -52,6 +52,7 @@ class Rules:
     standard_local_parts: frozenset[str] = frozenset()  # separator-insensitive
     student_domains: frozenset[str] = frozenset()
     institution_domains: frozenset[str] = frozenset()
+    alumni_domains: frozenset[str] = frozenset()
 
     @classmethod
     def build(
@@ -63,6 +64,7 @@ class Rules:
         standard_local_parts: Iterable[str] | None = None,
         student_domains: Iterable[str] | None = None,
         institution_domains: Iterable[str] | None = None,
+        alumni_domains: Iterable[str] | None = None,
     ) -> Rules:
         return cls(
             _lower_all(list_addresses),
@@ -71,6 +73,7 @@ class Rules:
             frozenset(_squash(p) for p in _lower_all(standard_local_parts)),
             _lower_all(student_domains),
             _lower_all(institution_domains),
+            _lower_all(alumni_domains),
         )
 
     @classmethod
@@ -85,6 +88,7 @@ class Rules:
             standard_local_parts=getattr(cls_, "standard_local_parts", None),
             student_domains=getattr(dom, "student", None),
             institution_domains=getattr(dom, "institution", None),
+            alumni_domains=getattr(dom, "alumni", None),
         )
 
 
@@ -129,7 +133,8 @@ def classify_with_reason(msg: MessageSummary, rules: Rules) -> Classification:
     if sender in rules.standard_addresses:
         return Classification("standard", "sender is a listed standard address")
     is_student = bool(domain) and in_domains(domain, rules.student_domains)
-    is_staff = bool(domain) and in_domains(domain, rules.institution_domains)
+    is_alumni = bool(domain) and in_domains(domain, rules.alumni_domains)
+    is_staff = not is_alumni and bool(domain) and in_domains(domain, rules.institution_domains)
     # Automated-sender names only count inside the institution: noreply@some-shop.example is
     # not "school mail" (it must not be treated as institutional by the personalised summary).
     if (
@@ -143,6 +148,8 @@ def classify_with_reason(msg: MessageSummary, rules: Rules) -> Classification:
         return Classification("student", "sender is in a student domain")
     if is_staff:
         return Classification("faculty", "sender is in an institution domain (likely staff)")
+    if is_alumni:
+        return Classification("external", "sender is an alumni address (not staff)")
     return Classification("external", "sender is outside the institution")
 
 
