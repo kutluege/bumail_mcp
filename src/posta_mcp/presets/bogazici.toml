@@ -1,8 +1,9 @@
 # Bogazici University (BUmail) preset. Source: docs/RESEARCH.md section 5.
-# Every section is UNVERIFIED: nothing has been tested against the live servers yet.
+# Live-verified on 2026-10-13 with a student account (scripts/live_verify.py): the student
+# imap/smtp variant, the login style and [folders]. Everything still marked unverified is not.
 # Flip `verified` to true per section only after a live check (scripts/live_verify.py).
 name = "bogazici"
-username_style = "localpart"   # unverified: login is "ad.soyad", not the full address
+username_style = "localpart"   # login is "ad.soyad", not the full address (verified)
 
 # Defaults shared by all account types; the matching [[variants]] entry adds the hosts.
 [imap]
@@ -19,17 +20,17 @@ security = "starttls"
 name = "student"
 domains = ["std.bogazici.edu.tr"]
 
-[variants.imap]
-verified = false        # unverified
-host = "imap.std.bogazici.edu.tr"   # unverified
-port = 993              # unverified
-security = "ssl"        # unverified
+[variants.imap]          # verified 2026-10-13: TLS, login; MOVE, UIDPLUS, SPECIAL-USE, IDLE
+verified = true
+host = "imap.std.bogazici.edu.tr"
+port = 993
+security = "ssl"
 
-[variants.smtp]
-verified = false        # unverified
-host = "smtp.std.bogazici.edu.tr"   # unverified
-port = 587              # unverified
-security = "starttls"   # unverified
+[variants.smtp]          # verified 2026-10-13: STARTTLS, login (nothing sent)
+verified = true
+host = "smtp.std.bogazici.edu.tr"
+port = 587
+security = "starttls"
 
 [[variants]]
 name = "staff"
@@ -47,12 +48,12 @@ host = "smtp.bogazici.edu.tr"   # unverified
 port = 587              # unverified
 security = "starttls"   # unverified
 
-[folders]
-verified = false        # unverified
+[folders]                # verified 2026-10-13: Sent/Drafts/Trash match the server's SPECIAL-USE
+verified = true
 sent = "Sent"
 drafts = "Drafts"
 trash = "Trash"
-archive = "Archive"
+archive = "Archive"      # not on the server by default; archive_messages creates it on first use
 
 [domains]
 verified = false        # unverified

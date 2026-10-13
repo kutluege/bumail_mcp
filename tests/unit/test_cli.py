@@ -39,7 +39,7 @@ def test_doctor_reports_without_password(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr("posta_mcp.cli.try_imap_login", lambda c, p: "FAILED (stub)")
     assert main(["doctor"]) == 1
     out = capsys.readouterr().out
-    assert "unverified" in out and "imap.host" in out
+    assert "unverified" in out and "domains.student" in out
     assert "student" in out and "login       : x.y" in out
     assert "pw-doctor-test" not in out
 

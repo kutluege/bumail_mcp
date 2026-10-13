@@ -28,7 +28,9 @@ def test_bogazici_student_variant(tmp_path):
         "starttls",
     )
     assert cfg.login == "ada.lovelace"  # localpart style
-    assert {"imap.host", "smtp.host", "folders.sent", "domains.student"} <= set(cfg.unverified)
+    # The student variant and folders were live-verified; the sender rules were not.
+    assert not {"imap.host", "smtp.host", "folders.sent"} & set(cfg.unverified)
+    assert "domains.student" in cfg.unverified
     assert "verified" not in " ".join(cfg.unverified)
 
 
@@ -38,6 +40,7 @@ def test_bogazici_staff_variant(tmp_path, domain):
     assert cfg.variant == "staff"
     assert (cfg.imap.host, cfg.smtp.host) == ("imap.bogazici.edu.tr", "smtp.bogazici.edu.tr")
     assert cfg.smtp.security == "starttls"
+    assert {"imap.host", "smtp.host"} <= set(cfg.unverified)  # staff not live-tested yet
 
 
 def test_bogazici_classification_and_domains(tmp_path):
@@ -63,7 +66,7 @@ def test_bogazici_unknown_domain_ok_with_explicit_hosts(tmp_path):
     assert cfg.variant == "" and cfg.imap.host == "imap.example"
     assert cfg.unverified == [
         f"{s}.{f}"
-        for s in ("folders", "domains", "classification")
+        for s in ("domains", "classification")
         for f in type(getattr(cfg, s)).model_fields
         if f != "verified"
     ]

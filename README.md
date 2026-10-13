@@ -13,7 +13,7 @@ posta-mcp, Claude'un e-postanı okumasını, aramasını, düzenlemesini ve tasl
 - **MCP**: Claude gibi yapay zekâ uygulamalarına yeni yetenekler ekleyen ortak bir standart. posta-mcp bu standartla çalışır.
 - **IMAP / SMTP**: Posta kutusunu okumak (IMAP) ve posta göndermek (SMTP) için kullanılan olağan yöntemler.
 
-> **Durum: alfa.** Boğaziçi ayarları henüz gerçek sunucuda denenmedi. Ayrıntı için aşağıdaki [Boğaziçi ayarları](#boğaziçi-ayarları) bölümüne bak.
+> **Durum: alfa.** Öğrenci hesabı ayarları gerçek sunucuda denendi ve çalışıyor. Personel hesabı ayarları ve posta listesi kuralları henüz denenmedi. Ayrıntı için aşağıdaki [Boğaziçi ayarları](#boğaziçi-ayarları) bölümüne bak.
 
 ## Ne yapabilir?
 
@@ -180,7 +180,13 @@ Dikkat: onayları otomatik kabul eden bir "hook" ayarlama. Bu, onay korumasını
 
 **Kullanıcı adı**, e-posta adresinin `@` işaretinden önceki kısmıdır. Yani `ad.soyad@std.bogazici.edu.tr` için `ad.soyad`. `setup` bunu kendisi doldurur.
 
-**Bu ayarların hiçbiri henüz doğrulanmadı.** Sunucu adları, portlar, kullanıcı adı kuralı, klasör adları ve posta listesi kuralları herkese açık BT belgelerinden alındı. Gerçek sunucuda denenmedi (kod içinde `unverified` diye işaretli). `posta-mcp doctor` doğrulanmamış alanları listeler.
+**Neler doğrulandı (13 Ekim 2026, öğrenci hesabıyla):**
+
+- Öğrenci sunucuları: `imap.std.bogazici.edu.tr:993` (SSL) ve `smtp.std.bogazici.edu.tr:587` (STARTTLS). Giriş çalışıyor.
+- Kullanıcı adı `@` öncesi kısımdır (`ad.soyad`).
+- Klasörler: `Sent`, `Drafts`, `Trash`. `Archive` klasörü sunucuda yok; ilk arşivlemede otomatik oluşturulur.
+
+**Henüz doğrulanmadı:** personel (`bogazici.edu.tr`) sunucuları, gönderen alan adları ve posta listesi kuralları (hoca/öğrenci ayrımı bunlara dayanır). Bunlar kod içinde `unverified` diye işaretli; `posta-mcp doctor` listeler.
 
 Ayrıca:
 
