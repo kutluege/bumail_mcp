@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  UV_NO_PROGRESS: "1"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      - run: uv sync
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+
+  unit:
+    name: unit (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      - run: uv sync
+      # integration tests are auto-marked `greenmail` and excluded here
+      - run: uv run pytest -m "not greenmail" -q
+
+  integration:
+    name: integration (GreenMail, docker)
+    runs-on: ubuntu-latest
+    env:
+      POSTA_REQUIRE_GREENMAIL: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      - run: uv sync
+      # keytool comes from the JDK preinstalled on ubuntu runners
+      - run: uv run python scripts/greenmail.py certs
+      - run: uv run python scripts/greenmail.py start --mode docker
+      - run: uv run pytest tests/integration -m greenmail -q
+      - name: GreenMail logs
+        if: failure()
+        run: docker logs posta-greenmail || true
+      - name: Stop GreenMail
+        if: always()
+        run: uv run python scripts/greenmail.py stop
