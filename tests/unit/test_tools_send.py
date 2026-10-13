@@ -577,3 +577,141 @@ async def test_failed_smtp_send_leaves_draft_and_sent_untouched(mode, monkeypatc
     assert r.is_error and "nothing was sent" in text(r)
     assert PASSWORD not in text(r)
     assert mb.moved == [] and mb.appended == []
+
+
+# --- what the dialog must disclose, and what it must refuse ------------------------------------
+
+
+def _draft_with(**headers):
+    msg = _draft_msg()
+    for name, value in headers.items():
+        msg[name.replace("_", "-")] = value
+    return compose.message_bytes(msg)
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("mode", MODES)
+async def test_send_draft_shows_reply_to_and_names_of_other_headers(mode):
+    raw = _draft_with(Reply_To="Baska <baska@example.net>", X_Mailer="evil-tool", X_Track="1")
+    mb = FakeMailbox(drafts={7: raw})
+    asker = Asker("decline")
+    async with client_for(make_config(), mb, mode, asker) as c:
+        await c.call_tool("send_draft", {"uid": 7})
+    shown = asker.messages[0]
+    assert "Reply-To: Baska <baska@example.net>" in shown
+    assert "Other headers: X-Mailer, X-Track" in shown
+    assert_nothing_sent(mb)
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("mode", MODES)
+async def test_confirmation_omits_reply_to_and_other_headers_when_absent(mode):
+    asker = Asker("decline")
+    async with client_for(make_config(), FakeMailbox(), mode, asker) as c:
+        await c.call_tool("send_message", ARGS)
+    assert "Reply-To:" not in asker.messages[0] and "Other headers:" not in asker.messages[0]
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("mode", MODES)
+@pytest.mark.parametrize(
+    "headers",
+    [
+        {"Resent_To": "x@evil.test"},
+        {"Resent_From": ME},
+        {"Sender": "boss@example.net"},
+        {"Disposition_Notification_To": ME},
+        {"Return_Receipt_To": ME},
+    ],
+)
+async def test_send_draft_refuses_redirecting_headers(mode, headers):
+    mb = FakeMailbox(drafts={7: _draft_with(**headers)})
+    asker = Asker()
+    async with client_for(make_config(), mb, mode, asker) as c:
+        r = await c.call_tool("send_draft", {"uid": 7})
+    assert r.is_error and "Refusing to send" in text(r) and "nothing was sent" in text(r)
+    assert asker.messages == []
+    assert_nothing_sent(mb)
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("mode", MODES)
+async def test_send_draft_allows_sender_equal_to_the_account(mode):
+    mb = FakeMailbox(drafts={7: _draft_with(Sender=f"Ben <{ME}>")})
+    async with client_for(make_config(), mb, mode, Asker()) as c:
+        r = await c.call_tool("send_draft", {"uid": 7})
+    assert not r.is_error and r.structured_content["status"] == "sent"
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("mode", MODES)
+@pytest.mark.parametrize("char", ["‮", "​", "⁦", "﻿"])
+@pytest.mark.parametrize("where", ["subject", "body"])
+async def test_invisible_characters_are_refused_not_silently_shown(mode, char, where):
+    args = {**ARGS, where: ARGS[where] + f"x{char}y"}
+    asker = Asker()
+    async with client_for(make_config(), FakeMailbox(), mode, asker) as c:
+        r = await c.call_tool("send_message", args)
+    assert r.is_error and "invisible" in text(r) and asker.messages == []
+    assert_nothing_sent()
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("mode", MODES)
+async def test_invisible_character_in_a_draft_header_is_refused(mode):
+    msg = _draft_msg()
+    msg.replace_header("Subject", "Fatura‮txt.exe")
+    mb = FakeMailbox(drafts={7: compose.message_bytes(msg)})
+    async with client_for(make_config(), mb, mode, Asker()) as c:
+        r = await c.call_tool("send_draft", {"uid": 7})
+    assert r.is_error and "invisible" in text(r)
+    assert_nothing_sent(mb)
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("mode", MODES)
+async def test_send_result_lists_only_plain_addresses_and_no_subject(mode):
+    mb = FakeMailbox(originals={("INBOX", 5): _original()})
+    mb.fail_append = True  # produces a warning
+    args = {
+        "to": [],
+        "subject": "",
+        "body": "Tamam.",
+        "reply_to_folder": "INBOX",
+        "reply_to_uid": 5,
+    }
+    async with client_for(make_config(), mb, mode, Asker()) as c:
+        r = await c.call_tool("send_message", args)
+    result = r.structured_content
+    assert result["recipients"] == ["hoca@example.org"]  # address only, no display name
+    assert result["warnings"] and not any("Ödev teslimi" in w for w in result["warnings"])
+
+
+def test_store_builds_outside_the_lock_and_keeps_the_first_entry():
+    import threading
+
+    from posta_mcp.tools.send import Prepared, _Store
+
+    store = _Store()
+    inside = threading.Event()
+    release = threading.Event()
+    results = []
+
+    def prepared(tag):
+        return Prepared(None, tag, (), b"", "", "", tag, 10**12)  # type: ignore[arg-type]
+
+    def slow():
+        inside.set()
+        release.wait(5)
+        return prepared("slow")
+
+    t = threading.Thread(target=lambda: results.append(store.get_or_create("k", slow)))
+    t.start()
+    assert inside.wait(5)
+    # While make() is still running (e.g. doing IMAP I/O) the store is not locked.
+    assert store.pop("other") is None
+    assert store.get_or_create("k", lambda: prepared("fast")).shown == "fast"  # this one won
+    release.set()
+    t.join(5)
+    assert results[0].shown == "fast"  # the late builder adopts the existing entry
+    assert store.pop("k").shown == "fast"

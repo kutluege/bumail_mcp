@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import ssl
 from datetime import date
 
@@ -9,7 +10,7 @@ import pytest
 from imap_fakes import FakeIMAPClient, factory, raw_message
 from imapclient import exceptions as imap_exc
 
-from posta_mcp.config import load_config
+from posta_mcp.config import MAX_MESSAGE_BYTES, load_config
 from posta_mcp.imap import Mailbox, MailboxError, SearchCriteria
 from posta_mcp.logs import register_secret
 
@@ -133,6 +134,28 @@ def test_mark_seen_sets_flag_explicitly_after_peek():
     names = client.names()
     assert names.index("fetch") < names.index("add_flags")
     assert client.calls[names.index("select_folder")][1] == ("INBOX", False)
+
+
+def test_oversized_message_is_refused_before_its_body_is_fetched():
+    big = b"Subject: big\r\n\r\n" + b"x" * MAX_MESSAGE_BYTES
+    folders = {"INBOX": {5: big, 6: raw_message("small")}}
+    with open_mailbox(folders=folders) as mb:
+        client = FakeIMAPClient.instances[-1]
+        with pytest.raises(MailboxError, match="too large"):
+            mb.fetch("INBOX", 5)
+        with pytest.raises(MailboxError, match="too large"):
+            mb.fetch_raw("INBOX", 5)
+        assert mb.fetch("INBOX", 6).subject == "small"  # the cap does not affect normal mail
+    fetched = [item.upper() for name, args in client.calls if name == "fetch" for item in args[1]]
+    assert fetched.count("BODY.PEEK[]") == 1  # only the small message's body was ever requested
+
+
+def test_imap_loggers_stay_at_warning_after_import_and_connect(caplog):
+    caplog.set_level(logging.DEBUG)  # root at DEBUG, as POSTA_LOG_LEVEL=DEBUG does
+    with open_mailbox() as mb:
+        mb.list_folders()
+        for name in ("imapclient", "imapclient.imaplib", "imaplib"):
+            assert logging.getLogger(name).getEffectiveLevel() >= logging.WARNING, name
 
 
 def test_missing_message_is_an_error():

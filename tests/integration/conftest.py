@@ -34,6 +34,7 @@ from pathlib import Path
 
 import imapclient
 import pytest
+from mcp_call import tool  # noqa: F401  (fixture shared by the tool tests)
 
 _SCRIPT = Path(__file__).resolve().parents[2] / "scripts" / "greenmail.py"
 _spec = importlib.util.spec_from_file_location("posta_greenmail_script", _SCRIPT)

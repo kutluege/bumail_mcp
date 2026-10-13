@@ -187,6 +187,23 @@ def test_remove_interest(path):
     assert [i.name for i in pf.load().interests] == ["yemekhane"]
 
 
+def test_stored_text_loses_invisible_characters_and_is_length_capped(path):
+    pf.add_interest("te​nis‮", ["ten⁠is"])
+    pf.set_notes("a​b‮c\nd")
+    stored = pf.load()
+    assert [i.name for i in stored.interests] == ["tenis"] and stored.interests[0].keywords == [
+        "tenis"
+    ]
+    assert stored.notes == "abc d"
+    with pytest.raises(ProfileError, match="too long"):
+        pf.add_interest("x" * (pf.MAX_NAME + 1))
+    with pytest.raises(ProfileError, match="too long"):
+        pf.add_interest("tenis", ["k" * (pf.MAX_KEYWORD + 1)])
+    with pytest.raises(ProfileError, match="too long"):
+        pf.set_notes("n" * (pf.MAX_NOTES + 1))
+    assert (pf.MAX_NOTES, pf.MAX_NAME, pf.MAX_KEYWORD, pf.MAX_INTERESTS) == (1000, 60, 40, 30)
+
+
 def test_set_notes(path):
     pf.add_interest("tenis")
     pf.set_notes("Güney Kampüs'te kalıyorum")

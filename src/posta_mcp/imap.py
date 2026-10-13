@@ -29,7 +29,7 @@ import imapclient
 from imapclient import exceptions as imap_exc
 
 from posta_mcp import credentials, tls
-from posta_mcp.config import Config
+from posta_mcp.config import MAX_MESSAGE_BYTES, Config
 from posta_mcp.logs import redact
 from posta_mcp.mime import parse_message
 from posta_mcp.models import MessageSummary, ParsedMessage, normalize_flags
@@ -38,7 +38,8 @@ log = logging.getLogger(__name__)
 
 # imaplib (driven by imapclient) logs every protocol line, including message bodies, at DEBUG.
 # Message content must never be logged (non-negotiable 7), whatever POSTA_LOG_LEVEL says.
-logging.getLogger("imapclient").setLevel(logging.WARNING)
+for _name in ("imapclient", "imaplib"):  # imapclient.imaplib is a child of the first
+    logging.getLogger(_name).setLevel(logging.WARNING)
 
 SpecialRole = Literal["sent", "drafts", "trash", "archive"]
 
@@ -362,6 +363,13 @@ class Mailbox:
 
     def _fetch_full(self, folder: str, uid: int, *, readonly: bool) -> tuple[bytes, list[str]]:
         self._select(folder, readonly=readonly)
+        with _errors("message size check"):
+            size = (self.client.fetch([uid], ["RFC822.SIZE"]).get(uid) or {}).get(b"RFC822.SIZE")
+        if isinstance(size, int) and size > MAX_MESSAGE_BYTES:
+            raise MailboxError(
+                f"Message {uid} is too large to read ({size // (1024 * 1024)} MB; "
+                f"the limit is {MAX_MESSAGE_BYTES // (1024 * 1024)} MB)."
+            )
         with _errors("message fetch"):
             data = self.client.fetch([uid], ["BODY.PEEK[]", "FLAGS"])
         item = data.get(uid)
@@ -426,9 +434,25 @@ class Mailbox:
             if use_move:
                 self.client.move(uids, destination)
             else:
-                self.client.copy(uids, destination)
-                self.client.add_flags(uids, [_DELETED], silent=True)
-                self.client.uid_expunge(uids)  # only these UIDs, never a plain EXPUNGE
+                self._copy_and_expunge(uids, destination)
+
+    def _copy_and_expunge(self, uids: list[int], destination: str) -> None:
+        """UID COPY + \\Deleted + UID EXPUNGE.  If the expunge fails the copies exist, so undo
+        the \\Deleted flags (best effort) and say so, rather than leave hidden state behind."""
+        self.client.copy(uids, destination)
+        self.client.add_flags(uids, [_DELETED], silent=True)
+        try:
+            self.client.uid_expunge(uids)  # only these UIDs, never a plain EXPUNGE
+        except Exception as exc:  # noqa: BLE001 - whatever failed, the messages were copied
+            try:
+                self.client.remove_flags(uids, [_DELETED], silent=True)
+            except Exception:  # noqa: BLE001
+                log.warning("could not clear \\Deleted after a failed expunge")
+            log.warning("IMAP expunge after copy failed: %s", type(exc).__name__)
+            raise MailboxError(
+                f"The message(s) were copied to '{destination}' but could not be removed from "
+                "the source folder (possible duplicate); nothing was deleted."
+            ) from None
 
     def append(self, folder: str, raw: bytes, flags: tuple[str, ...] = ()) -> int | None:
         """APPEND; returns the new UID when the server reports APPENDUID."""

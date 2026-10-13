@@ -6,8 +6,6 @@ from email import message_from_bytes, policy
 
 from mcp_call import eml
 
-pytest_plugins = ["mcp_call"]  # provides the `tool` fixture
-
 SEEN = b"\\Seen"
 DRAFT = b"\\Draft"
 

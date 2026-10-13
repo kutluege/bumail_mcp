@@ -1,8 +1,6 @@
 """Call posta-mcp tools through a real in-memory MCP client against GreenMail.
 
-Usage in a test module::
-
-    pytest_plugins = ["mcp_call"]  # then use the `tool` fixture
+The ``tool`` fixture is re-exported by ``conftest.py``, so any integration test can use it::
 
     def test_x(tool):
         out = tool("search_messages", folder="INBOX")

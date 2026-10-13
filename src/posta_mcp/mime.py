@@ -518,7 +518,8 @@ def get_attachment_text(raw: bytes, index: int, max_chars: int = 20000) -> str:
         raise ValueError(f"No attachment with index {index} (message has {len(parts)}).")
     part, filename = parts[index]
     if not _is_text_like(part.get_content_type(), filename):
-        raise ValueError(f"Attachment {index} is {part.get_content_type()}, not a text-like file.")
+        # The content type is sender-controlled, so it is deliberately not echoed.
+        raise ValueError(f"Attachment {index} is not a text-like file (type omitted).")
     text = _decode_text_part(part, _payload(part))
     if part.get_content_type() == "text/html":
         text = html_to_text(text)

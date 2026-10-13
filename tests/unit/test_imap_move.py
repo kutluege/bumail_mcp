@@ -62,6 +62,25 @@ def test_fallback_when_move_missing_uses_copy_deleted_uid_expunge():
     assert sorted(client.folders["Trash"]) == [1]
 
 
+def test_failed_uid_expunge_clears_deleted_and_reports_a_possible_duplicate():
+    with mailbox(NO_MOVE) as mb:
+        client = FakeIMAPClient.instances[-1]
+        client.flags[("INBOX", 2)] = {b"\\Deleted"}  # untargeted, already \Deleted
+
+        def boom(uids):
+            raise OSError("connection reset")
+
+        client.uid_expunge = boom
+        with pytest.raises(MailboxError, match="copied .* not .* removed") as info:
+            mb.move("INBOX", [1], "Trash")
+    assert "possible duplicate" in str(info.value)
+    assert ("remove_flags", ((1,), (b"\\Deleted",))) in client.calls  # only the targeted UID
+    assert b"\\Deleted" not in client.flags[("INBOX", 1)]
+    assert b"\\Deleted" in client.flags[("INBOX", 2)]  # others untouched
+    assert "expunge" not in client.names()
+    assert sorted(client.folders["INBOX"]) == [1, 2, 3] and sorted(client.folders["Trash"]) == [1]
+
+
 def test_refuses_without_move_and_uidplus():
     with mailbox(NEITHER) as mb:
         client = FakeIMAPClient.instances[-1]
