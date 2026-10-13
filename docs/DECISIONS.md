@@ -37,3 +37,6 @@ Deviations from `docs/SPEC.md` and notable judgment calls, one or two lines each
 - Profile defaults for known interests (Güney Kampüs, yemekhane, tenis) are applied only when the user adds one without keywords; otherwise they're returned as suggestions, never stored silently. `profile.example.toml` ships as package data.
 - Digest output is capped at 60,000 characters; the prompt `language` argument is validated against a safe pattern so it can't carry injected instructions.
 - `Auto-Submitted`/`Precedence` headers aren't used for classification yet (not in `MessageSummary`).
+- MCPB: `manifest_version` 0.4 with server type `uv` (validated with `@anthropic-ai/mcpb validate`, packs to ~100 kB); not yet tried in a real Claude Desktop. A packaging test fails if a registered tool/prompt is missing from `manifest.json`.
+- `server.json` follows the 2025-12-11 registry schema; name/owner are `io.github.OWNER/posta-mcp` placeholders until the human chooses them.
+- MCP Inspector 2.10.1's inline `--cli -e K=V <cmd>` form fails ("No servers found in config file"); docs use `--config inspector.json --server posta`.
