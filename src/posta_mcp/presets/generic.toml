@@ -1,0 +1,28 @@
+# Generic preset: you supply the hosts (in config.toml or POSTA_IMAP_HOST / POSTA_SMTP_HOST).
+name = "generic"
+
+[imap]
+host = ""
+port = 993
+security = "ssl"        # "ssl" (implicit TLS) or "starttls"
+
+[smtp]
+host = ""
+port = 465
+security = "ssl"
+
+[folders]
+sent = "Sent"
+drafts = "Drafts"
+trash = "Trash"
+archive = "Archive"
+
+[domains]
+institution = []
+student = []
+
+[classification]
+list_addresses = []
+list_domains = []
+standard_addresses = []
+standard_local_parts = ["noreply", "no-reply", "donotreply", "do-not-reply", "mailer-daemon", "postmaster"]

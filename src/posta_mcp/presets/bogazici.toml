@@ -1,0 +1,35 @@
+# Bogazici University (BUmail) preset.
+# Every section below is UNVERIFIED best-guess data: nothing has been tested against the live
+# servers yet. Flip `verified` to true per section only after a live check (scripts/live_verify.py).
+name = "bogazici"
+
+[imap]
+verified = false        # unverified
+host = "mail.boun.edu.tr"   # unverified placeholder
+port = 993              # unverified
+security = "ssl"        # unverified
+
+[smtp]
+verified = false        # unverified
+host = "mail.boun.edu.tr"   # unverified placeholder
+port = 465              # unverified
+security = "ssl"        # unverified
+
+[folders]
+verified = false        # unverified
+sent = "Sent"
+drafts = "Drafts"
+trash = "Trash"
+archive = "Archive"
+
+[domains]
+verified = false        # unverified
+institution = ["bogazici.edu.tr", "boun.edu.tr"]
+student = ["std.bogazici.edu.tr", "std.boun.edu.tr"]
+
+[classification]
+verified = false        # unverified
+list_addresses = ["students@list.bogazici.edu.tr"]
+list_domains = ["list.bogazici.edu.tr"]
+standard_addresses = []
+standard_local_parts = ["noreply", "no-reply", "donotreply", "do-not-reply", "mailer-daemon", "postmaster"]
