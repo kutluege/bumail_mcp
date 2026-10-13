@@ -112,7 +112,7 @@ All tools get MCP annotations (`readOnlyHint`, `destructiveHint`, `idempotentHin
 
 **Read (M1)** — `server_info` (preset, account, send enabled?, unverified fields),
 `list_folders`, `search_messages(folder="INBOX", from_, to, subject, text, since, before, unseen,
-flagged, limit)`, `get_message(folder, uid, max_chars, mark_seen=false)`. Optional:
+flagged, limit)`, `get_message(folder, uid, max_chars)`. Optional:
 `get_attachment_text(folder, uid, index)` for text-like attachments only.
 
 **Organize + drafts (M2)** — `mark_messages(folder, uids, seen?, flagged?)`,
