@@ -29,3 +29,6 @@ Deviations from `docs/SPEC.md` and notable judgment calls, one or two lines each
 - The `imapclient`/`imaplib` loggers are forced to WARNING because imaplib logs message bodies at DEBUG.
 - `close_folder()` (IMAP CLOSE) is never used: CLOSE silently expunges every `\Deleted` message in the folder.
 - `move` refuses a missing destination instead of creating it; Trash/Archive are created only by their own tools, Drafts/Sent on first save.
+- Send confirmation binding: the resolver builds the message once and parks it in memory keyed by a hash of the tool arguments (drafts: of the draft's raw bytes); the tool body only pops it and sends the stored wire bytes after re-checking their SHA-256 (shown to the user as a fingerprint). Entries expire after 30 min and are single-use.
+- Refusals (sending disabled, client cannot elicit) are `ToolError`s; decline/cancel/unchecked return `status="not_sent"`. Max 50 recipients per send; `send_draft` refuses drafts whose From is not the account.
+- `save_sent`: `auto` currently behaves like `always` (append to Sent with `\Seen`). A failed Sent copy or Trash move after a successful send is a warning, not an error.
