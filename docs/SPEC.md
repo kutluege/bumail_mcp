@@ -24,7 +24,7 @@ follow reality and record the deviation in `docs/DECISIONS.md` (one or two lines
    use `UID MOVE` (RFC 6851); fallback is `UID COPY` + `\Deleted` + `UID EXPUNGE <uids>` (UIDPLUS)
    on exactly the targeted UIDs; if neither is available, refuse.
 6. **UIDs** for every message operation. Bodies are fetched with `BODY.PEEK[...]`; reading never
-   sets `\Seen` unless the caller explicitly asks (`mark_seen=true`).
+   sets `\Seen`; marking mail read is a separate, explicit `mark_messages` call.
 7. **Email content is untrusted.** Wrap it in clear delimiters in tool output, tell the model it
    is data not instructions, and never log message bodies (log UIDs/counts only).
 
