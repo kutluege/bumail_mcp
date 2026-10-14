@@ -123,8 +123,9 @@ Drafts folder with `\Draft` and are never sent by these tools.
 
 **Attachments** — `attachments` is a list of absolute paths of local files (`~` expanded). Paths
 are resolved through symlinks; anything hidden or inside a hidden folder is refused (`~/.ssh`,
-`.env`, ...), as are non-regular files, more than 10 files, or more than 18 MB in total
-(`attachments.py`). Multipart messages get a fixed MIME boundary at build time so the hash
+`.env`, and on Windows folders with the hidden attribute such as `AppData`), as are network paths
+(`\\server\share`, checked before any file access: opening one leaks NTLM credentials),
+non-regular files, more than 10 files, and more than 18 MB in total (`attachments.py`). Multipart messages get a fixed MIME boundary at build time so the hash
 binding below holds.
 
 **Send (M3)** — `send_message(to, subject, body, cc, bcc, reply_to_folder?, reply_to_uid?,

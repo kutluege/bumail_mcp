@@ -158,7 +158,8 @@ model writes the summary.
 
 Attachments: `send_message`, `create_draft` and `create_reply_draft` take `attachments`, a list of
 absolute paths of files on your computer (at most 10 files, 18 MB in total). Hidden files and
-anything inside a hidden folder (`.ssh`, `.env`, ...) are refused. The send confirmation shows
+anything inside a hidden folder (`.ssh`, `.env`, Windows `AppData`, ...) are refused, and so are
+network paths (`\\server\share`). The send confirmation shows
 each attachment's name, size and full path.
 
 ## Prompts

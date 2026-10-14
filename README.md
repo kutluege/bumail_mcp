@@ -151,7 +151,7 @@ Claude'un kullandığı araçlar:
 
 Bir aramada en fazla 100 sonuç gelir (varsayılan 20). Çok uzun posta metinleri 20.000 karakterde kesilir.
 
-**Dosya eki:** `send_message`, `create_draft` ve `create_reply_draft` bilgisayarındaki dosyaları ekleyebilir (`attachments`: dosyaların tam yolu). En fazla 10 dosya ve toplam 18 MB eklenebilir. Gizli dosya ve klasörler (`.ssh`, `.env` gibi) hiç eklenmez. Gönderirken açılan onay penceresinde her ekin adı, boyutu ve bilgisayardaki yeri gösterilir.
+**Dosya eki:** `send_message`, `create_draft` ve `create_reply_draft` bilgisayarındaki dosyaları ekleyebilir (`attachments`: dosyaların tam yolu). En fazla 10 dosya ve toplam 18 MB eklenebilir. Gizli dosya ve klasörler (`.ssh`, `.env`, Windows'ta `AppData` gibi) ve ağ yolları (`\\sunucu\paylaşım`) hiç eklenmez. Gönderirken açılan onay penceresinde her ekin adı, boyutu ve bilgisayardaki yeri gösterilir.
 
 ## Göndermeyi açmak
 

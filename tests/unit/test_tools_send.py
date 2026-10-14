@@ -722,6 +722,7 @@ def test_store_builds_outside_the_lock_and_keeps_the_first_entry():
 
 @pytest.mark.anyio
 @pytest.mark.parametrize("mode", MODES)
+@pytest.mark.usefixtures("no_windows_attributes")
 async def test_attachment_is_shown_with_its_path_and_sent(mode, tmp_path):
     photo = tmp_path / "çiçek.jpg"
     photo.write_bytes(b"\xff\xd8\xff fake jpeg")
@@ -741,6 +742,7 @@ async def test_attachment_is_shown_with_its_path_and_sent(mode, tmp_path):
 
 @pytest.mark.anyio
 @pytest.mark.parametrize("mode", MODES)
+@pytest.mark.usefixtures("no_windows_attributes")
 async def test_attachment_changed_after_confirmation_is_sent_as_shown(mode, tmp_path):
     note = tmp_path / "not.txt"
     note.write_text("ilk hali")
@@ -759,6 +761,7 @@ async def test_attachment_changed_after_confirmation_is_sent_as_shown(mode, tmp_
 
 @pytest.mark.anyio
 @pytest.mark.parametrize("mode", MODES)
+@pytest.mark.usefixtures("no_windows_attributes")
 async def test_hidden_or_missing_attachment_is_refused_before_asking(mode, tmp_path):
     secret = tmp_path / ".ssh" / "id_ed25519"
     secret.parent.mkdir()
@@ -774,6 +777,7 @@ async def test_hidden_or_missing_attachment_is_refused_before_asking(mode, tmp_p
 
 @pytest.mark.anyio
 @pytest.mark.parametrize("mode", MODES)
+@pytest.mark.usefixtures("no_windows_attributes")
 async def test_create_draft_with_attachment(mode, tmp_path):
     pdf = tmp_path / "rapor.pdf"
     pdf.write_bytes(b"%PDF-1.4 fake")

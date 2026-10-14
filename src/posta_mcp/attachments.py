@@ -3,8 +3,11 @@
 Attaching a local file is a way for data to leave the machine, so paths are checked strictly:
 
 * absolute paths only (``~`` is expanded), resolved through symlinks, regular files only;
+* no network paths (``\\\\server\\share``, ``//server/share``): on Windows merely opening one
+  sends the user's NTLM credentials to that server, and drafts need no confirmation;
 * nothing inside a hidden directory or itself hidden (``~/.ssh``, ``~/.aws``, ``.env`` ...),
-  judged on the resolved path so a symlink cannot smuggle one in;
+  judged on the resolved path so a symlink cannot smuggle one in.  On Windows a folder with the
+  hidden attribute counts too (``AppData``, ``ProgramData``: browser profiles, app tokens);
 * at most ``MAX_FILES`` files and ``MAX_TOTAL_BYTES`` in total (base64 adds about a third, so
   the message stays under the usual 25 MB provider limit).
 
@@ -16,6 +19,7 @@ from __future__ import annotations
 
 import mimetypes
 import re
+import stat
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -38,13 +42,15 @@ def _resolve(raw: str) -> Path:
     if not isinstance(raw, str) or not raw.strip() or _BAD_CHARS.search(raw):
         raise ValueError("attachment paths must be non-empty strings without control characters")
     path = Path(raw).expanduser()
+    if str(path).startswith(("\\\\", "//")):  # checked before anything touches the file system
+        raise ValueError(f"network paths are not allowed for attachments: {path.name!r}")
     if not path.is_absolute():
         raise ValueError(f"attachment path must be absolute: {path.name!r}")
     try:
         resolved = path.resolve(strict=True)
     except (OSError, RuntimeError):
         raise ValueError(f"attachment not found: {path.name!r}") from None
-    if any(part.startswith(".") for part in resolved.parts[1:]):
+    if any(part.startswith(".") for part in resolved.parts[1:]) or _windows_hidden(resolved):
         raise ValueError(
             f"refusing to attach {resolved.name!r}: it is hidden or inside a hidden folder "
             "(such folders often hold keys and passwords)"
@@ -52,6 +58,16 @@ def _resolve(raw: str) -> Path:
     if not resolved.is_file():
         raise ValueError(f"attachment is not a regular file: {resolved.name!r}")
     return resolved
+
+
+def _attributes(path: Path) -> int:
+    """Windows file attributes of ``path`` (0 elsewhere)."""
+    return getattr(path.stat(), "st_file_attributes", 0)
+
+
+def _windows_hidden(path: Path) -> bool:
+    # The drive root itself is normally hidden+system, so it is skipped.
+    return any(_attributes(p) & stat.FILE_ATTRIBUTE_HIDDEN for p in (path, *path.parents[:-1]))
 
 
 def load(paths: Sequence[str]) -> list[FileAttachment]:
