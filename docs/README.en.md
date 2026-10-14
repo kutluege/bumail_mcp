@@ -156,6 +156,12 @@ Defaults: 20 results per search (max 100), message text truncated at 20,000 char
 notice. Summary tools never call a model; they select and package messages, and your client's
 model writes the summary.
 
+Attachments: `send_message`, `create_draft` and `create_reply_draft` take `attachments`, a list of
+absolute paths of files on your computer (at most 10 files, 18 MB in total). Hidden files and
+anything inside a hidden folder (`.ssh`, `.env`, Windows `AppData`, ...) are refused, and so are
+network paths (`\\server\share`). The send confirmation shows
+each attachment's name, size and full path.
+
 ## Prompts
 
 | Prompt | What it does |

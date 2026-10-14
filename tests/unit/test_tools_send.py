@@ -715,3 +715,90 @@ def test_store_builds_outside_the_lock_and_keeps_the_first_entry():
     t.join(5)
     assert results[0].shown == "fast"  # the late builder adopts the existing entry
     assert store.pop("k").shown == "fast"
+
+
+# --- attachments from this computer -------------------------------------------------------------
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("mode", MODES)
+@pytest.mark.usefixtures("no_windows_attributes")
+async def test_attachment_is_shown_with_its_path_and_sent(mode, tmp_path):
+    photo = tmp_path / "çiçek.jpg"
+    photo.write_bytes(b"\xff\xd8\xff fake jpeg")
+    asker = Asker()
+    async with client_for(make_config(), FakeMailbox(), mode, asker) as c:
+        r = await c.call_tool("send_message", {**ARGS, "attachments": [str(photo)]})
+    assert r.structured_content["status"] == "sent"
+    shown = asker.messages[0]
+    assert "çiçek.jpg [image/jpeg, 13 bytes]" in shown
+    assert f"Attached from this computer: {photo.resolve()}" in shown
+    sent = message_from_bytes(FakeSMTP.sent[0]["data"], policy=policy.default)
+    (part,) = sent.iter_attachments()
+    assert part.get_filename() == "çiçek.jpg" and part.get_content() == photo.read_bytes()
+    fingerprint = re.search(r"Fingerprint[^:]*: ([0-9a-f]{64})", shown).group(1)
+    assert hashlib.sha256(FakeSMTP.sent[0]["data"]).hexdigest() == fingerprint
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("mode", MODES)
+@pytest.mark.usefixtures("no_windows_attributes")
+async def test_attachment_changed_after_confirmation_is_sent_as_shown(mode, tmp_path):
+    note = tmp_path / "not.txt"
+    note.write_text("ilk hali")
+
+    class Editor(Asker):
+        async def __call__(self, ctx, params):
+            note.write_text("sonradan degisti")
+            return await super().__call__(ctx, params)
+
+    asker = Editor()
+    async with client_for(make_config(), FakeMailbox(), mode, asker) as c:
+        await c.call_tool("send_message", {**ARGS, "attachments": [str(note)]})
+    assert b"sonradan" not in FakeSMTP.sent[0]["data"]
+    assert len(asker.messages) == 1
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("mode", MODES)
+@pytest.mark.usefixtures("no_windows_attributes")
+async def test_hidden_or_missing_attachment_is_refused_before_asking(mode, tmp_path):
+    secret = tmp_path / ".ssh" / "id_ed25519"
+    secret.parent.mkdir()
+    secret.write_text("PRIVATE KEY")
+    for path, word in ((secret, "hidden"), (tmp_path / "yok.pdf", "not found")):
+        asker = Asker()
+        async with client_for(make_config(), FakeMailbox(), mode, asker) as c:
+            r = await c.call_tool("send_message", {**ARGS, "attachments": [str(path)]})
+        assert r.is_error and word in text(r) and "PRIVATE KEY" not in text(r)
+        assert asker.messages == []
+    assert_nothing_sent()
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("mode", MODES)
+@pytest.mark.usefixtures("no_windows_attributes")
+async def test_create_draft_with_attachment(mode, tmp_path):
+    pdf = tmp_path / "rapor.pdf"
+    pdf.write_bytes(b"%PDF-1.4 fake")
+    mb = FakeMailbox()
+    async with client_for(make_config(enabled=False), mb, mode, None) as c:
+        r = await c.call_tool(
+            "create_draft",
+            {
+                "to": ["a@example.org"],
+                "subject": "Rapor",
+                "body": "Ekte.",
+                "attachments": [str(pdf)],
+            },
+        )
+        bad = await c.call_tool(
+            "create_draft",
+            {"to": ["a@example.org"], "subject": "x", "body": "x", "attachments": ["rapor.pdf"]},
+        )
+    assert not r.is_error and "NOT been sent" in text(r)
+    (folder, raw, flags) = mb.appended[0]
+    (part,) = message_from_bytes(raw, policy=policy.default).iter_attachments()
+    assert folder == "Drafts" and part.get_filename() == "rapor.pdf"
+    assert bad.is_error and "absolute" in text(bad) and len(mb.appended) == 1
+    assert_nothing_sent()

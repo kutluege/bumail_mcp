@@ -117,14 +117,21 @@ flagged, limit)`, `get_message(folder, uid, max_chars)`. Optional:
 
 **Organize + drafts (M2)** — `mark_messages(folder, uids, seen?, flagged?)`,
 `move_messages(folder, uids, destination)`, `trash_messages(folder, uids)`,
-`archive_messages(folder, uids)`, `create_draft(to, subject, body, cc, bcc)`,
-`create_reply_draft(folder, uid, body, reply_all=false)`. Drafts are APPENDed to the Drafts
-folder with `\Draft` and are never sent by these tools.
+`archive_messages(folder, uids)`, `create_draft(to, subject, body, cc, bcc, attachments)`,
+`create_reply_draft(folder, uid, body, reply_all=false, attachments)`. Drafts are APPENDed to the
+Drafts folder with `\Draft` and are never sent by these tools.
 
-**Send (M3)** — `send_message(to, subject, body, cc, bcc, in_reply_to_uid?, folder?)` and
-`send_draft(uid)`. Order of checks: sending enabled? → client supports elicitation? → build the
-exact message → elicit confirmation showing From, To, Cc, Bcc, Subject, attachment names and the
-full body (or first N chars plus length) → only on `accept` with `confirm=true`, send exactly the
+**Attachments** — `attachments` is a list of absolute paths of local files (`~` expanded). Paths
+are resolved through symlinks; anything hidden or inside a hidden folder is refused (`~/.ssh`,
+`.env`, and on Windows folders with the hidden attribute such as `AppData`), as are network paths
+(`\\server\share`, checked before any file access: opening one leaks NTLM credentials),
+non-regular files, more than 10 files, and more than 18 MB in total (`attachments.py`). Multipart messages get a fixed MIME boundary at build time so the hash
+binding below holds.
+
+**Send (M3)** — `send_message(to, subject, body, cc, bcc, reply_to_folder?, reply_to_uid?,
+reply_all, attachments)` and `send_draft(uid)`. Order of checks: sending enabled? → client supports elicitation? → build the
+exact message → elicit confirmation showing From, To, Cc, Bcc, Subject, attachment names (and,
+for local files, their full paths) and the full body (or first N chars plus length) → only on `accept` with `confirm=true`, send exactly the
 bytes that were shown (hash binding). Decline/cancel/unsupported → nothing sent, clear message.
 Save to Sent per `save_sent`.
 
