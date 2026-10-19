@@ -85,7 +85,11 @@ def test_every_kind_has_turkish_advice_without_placeholders():
     assert "mail.bogazici.edu.tr/password" in hints.HINTS["auth"]
     assert "Ayarlar > Uzantılar > Boğaziçi Postanesi" in hints.HINTS["auth"]
     for kind in ("auth", "no_password", "keychain"):
-        assert "posta-mcp setup" in hints.HINTS[kind] and "sohbete yazma" in hints.HINTS[kind]
+        assert "sohbete yazma" in hints.HINTS[kind]
+    assert (
+        "posta-mcp parola" in hints.HINTS["auth"] and "posta-mcp parola" in hints.HINTS["keychain"]
+    )
+    assert "posta-mcp setup" in hints.HINTS["no_password"]
     assert "BU-VPN" in hints.HINTS["unreachable"] and "BU-VPN" in hints.HINTS["timeout"]
     assert "internet" in hints.HINTS["dns"]
     assert "kapatmaya çalışma" in hints.HINTS["tls"]

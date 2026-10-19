@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 
 import keyring
-from keyring.errors import KeyringError
+from keyring.errors import KeyringError, PasswordDeleteError
 
 from posta_mcp.logs import register_secret
 
@@ -57,3 +57,16 @@ def set_password(username: str, password: str) -> None:
         raise CredentialsError(
             f"Could not store password ({type(exc).__name__}).", kind="keychain"
         ) from None
+
+
+def delete_password(username: str) -> bool:
+    """Remove the keychain entry for `username`. False if there was none (not an error)."""
+    try:
+        keyring.delete_password(SERVICE, username)
+    except PasswordDeleteError:
+        return False
+    except KeyringError as exc:
+        raise CredentialsError(
+            f"Parola anahtar zincirinden silinemedi ({type(exc).__name__}).", kind="keychain"
+        ) from None
+    return True

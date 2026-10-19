@@ -25,7 +25,8 @@ from posta_mcp.logs import redact
 
 DESKTOP_SETTINGS = "Ayarlar > Uzantılar > Boğaziçi Postanesi"
 SETUP_COMMAND = "uvx posta-mcp setup"
-_WHERE_TO_FIX = f"Claude Desktop: {DESKTOP_SETTINGS}; Claude Code: `{SETUP_COMMAND}`"
+PASSWORD_COMMAND = "uvx posta-mcp parola"  # re-asks only the password
+_WHERE_TO_FIX = f"Claude Desktop: {DESKTOP_SETTINGS}; Claude Code: `{PASSWORD_COMMAND}`"
 _NO_CHAT_PASSWORD = "Parolanı sohbete yazma."
 
 HINTS: dict[str, str] = {
@@ -42,7 +43,7 @@ HINTS: dict[str, str] = {
     "keychain": (
         "Parola, bilgisayarın parola deposundan (anahtar zinciri) okunamadı ya da oraya "
         f"kaydedilemedi. Claude Desktop kullanıyorsan parolanı {DESKTOP_SETTINGS} bölümüne gir. "
-        f"Claude Code kullanıyorsan `{SETUP_COMMAND}` komutunu yeniden çalıştır. "
+        f"Claude Code kullanıyorsan `{PASSWORD_COMMAND}` komutunu çalıştır. "
         f"{_NO_CHAT_PASSWORD}"
     ),
     "dns": (

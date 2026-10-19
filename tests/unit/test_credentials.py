@@ -4,10 +4,17 @@ import logging
 import keyring
 import pytest
 from keyring.backend import KeyringBackend
+from keyring.errors import KeyringLocked, PasswordDeleteError
 
 from posta_mcp import credentials
 from posta_mcp.config import load_config
-from posta_mcp.credentials import CredentialsError, get_password, set_password
+from posta_mcp.credentials import (
+    CredentialsError,
+    delete_password,
+    get_password,
+    has_stored_password,
+    set_password,
+)
 from posta_mcp.logs import configure_logging, redact
 from posta_mcp.server import build_server
 
@@ -27,7 +34,8 @@ class MemoryKeyring(KeyringBackend):
         self.store[(service, username)] = password
 
     def delete_password(self, service, username):
-        self.store.pop((service, username), None)
+        if self.store.pop((service, username), None) is None:
+            raise PasswordDeleteError("not found")  # as real backends do
 
 
 @pytest.fixture(autouse=True)
@@ -47,6 +55,26 @@ def test_env_wins_over_keyring(monkeypatch, memory_keyring):
 def test_keyring_used_when_no_env():
     set_password("u", "from-keyring")
     assert get_password("u") == "from-keyring"
+
+
+def test_delete_password_removes_entry():
+    set_password("u", "from-keyring")
+    assert delete_password("u") is True
+    assert not has_stored_password("u")
+
+
+def test_delete_password_tolerates_missing_entry():
+    assert delete_password("nobody") is False
+
+
+def test_delete_password_reports_keychain_errors(monkeypatch):
+    def locked(service, username):
+        raise KeyringLocked("locked")
+
+    monkeypatch.setattr(keyring, "delete_password", locked)
+    with pytest.raises(CredentialsError) as exc:
+        delete_password("u")
+    assert "KeyringLocked" in str(exc.value)
 
 
 def test_missing_password_error_has_no_secret(monkeypatch):
