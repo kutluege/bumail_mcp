@@ -122,8 +122,6 @@ Sunucular e-posta adresinin uzantısından seçilir; kullanıcı adı `@` önces
 - Okuduğun postalar, kullandığın uygulamanın yapay zekâ sağlayıcısına (Claude için Anthropic'e) gönderilir.
 - Yapay zekâ postayı yanlış okuyabilir ya da yanlış özetleyebilir. Son tarihleri, notları ve sınav tarihlerini asıl postadan kontrol et.
 - Gönderme varsayılan olarak kapalıdır ve her zaman senin onayını ister. Gönderdiğin her şeyden sen sorumlusun.
-- `unverified` (henüz doğrulanmadı) diye işaretli ayarlar gerçek sunucuda denenmedi; `doctor` listeler.
-- Yazılım olduğu gibi sunulur, hiçbir garanti verilmez. Lisans: MIT ([LICENSE](LICENSE)).
 
 ## Geliştiriciler için
 
