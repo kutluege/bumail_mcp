@@ -4,10 +4,12 @@ helpers of scripts/live_verify.py. No network except that building a wheel may f
 from __future__ import annotations
 
 import asyncio
+import fnmatch
 import importlib.util
 import json
 import re
 import shutil
+import struct
 import subprocess
 import sys
 import tomllib
@@ -82,20 +84,37 @@ def test_manifest_basics():
     assert m["server"]["type"] == "uv"
     assert (ROOT / m["server"]["entry_point"]).is_file()
     assert set(m["compatibility"]["platforms"]) <= {"darwin", "win32", "linux"}
+    assert m["name"] == "posta-mcp"
+    assert m["display_name"] == "Boğaziçi Postanesi"
+    assert "unofficial" in m["long_description"].lower()
+    assert "not affiliated" in m["long_description"].lower()
+
+
+def test_manifest_icon_is_a_512_png_kept_in_the_bundle():
+    m = load_json("manifest.json")
+    icon = ROOT / m["icon"]
+    data = icon.read_bytes()
+    assert data[:8] == b"\x89PNG\r\n\x1a\n" and data[12:16] == b"IHDR"
+    assert struct.unpack(">II", data[16:24]) == (512, 512)
+    lines = (ROOT / ".mcpbignore").read_text(encoding="utf-8").splitlines()
+    ignored = [line.strip() for line in lines if line.strip() and not line.startswith("#")]
+    assert not any(fnmatch.fnmatch(m["icon"], pattern) for pattern in ignored)
 
 
 def test_manifest_user_config_maps_to_env():
     m = load_json("manifest.json")
     cfg = m["user_config"]
-    assert set(cfg) == {"preset", "email", "password", "allow_send"}  # no ca_file for users
+    # Desktop bundle is Boğaziçi-only: no preset or host fields, no ca_file for users
+    assert set(cfg) == {"email", "password", "allow_send"}
     assert cfg["password"]["sensitive"] is True
-    assert cfg["preset"]["default"] == "bogazici"
     assert cfg["allow_send"]["type"] == "boolean" and cfg["allow_send"]["default"] is False
     for field in cfg.values():
         assert field["type"] and field["title"] and field["description"]
+    assert "std.bogazici.edu.tr" in cfg["email"]["description"]
+    assert "BUmail" in cfg["password"]["title"]
     env = m["server"]["mcp_config"]["env"]
     assert env == {
-        "POSTA_PRESET": "${user_config.preset}",
+        "POSTA_PRESET": "bogazici",
         "POSTA_EMAIL": "${user_config.email}",
         "POSTA_PASSWORD": "${user_config.password}",
         "POSTA_ALLOW_SEND": "${user_config.allow_send}",
@@ -132,9 +151,27 @@ def test_manifest_lists_every_registered_tool_and_prompt():
     listed_prompts = {p["name"] for p in m["prompts"]}
     assert _registered("tools") <= listed_tools
     assert _registered("prompts") <= listed_prompts
-    assert {"hoca-ozet", "ogrenci-ozet", "bana-ozet"} == listed_prompts
+    assert {"baslangic", "hoca-ozet", "ogrenci-ozet", "bana-ozet"} == listed_prompts
     for prompt in m["prompts"]:
         assert prompt["text"]
+
+
+def test_manifest_baslangic_prompt():
+    m = load_json("manifest.json")
+    (prompt,) = [p for p in m["prompts"] if p["name"] == "baslangic"]
+    assert not prompt.get("arguments")
+    text = prompt["text"]
+    for needle in (
+        "server_info",
+        "list_folders",
+        "get_profile",
+        "hoca-ozet",
+        "ogrenci-ozet",
+        "bana-ozet",
+        "Turkish",
+        "untrusted data",
+    ):
+        assert needle in text, needle
 
 
 # ------------------------------------------------------------------ server.json and README
