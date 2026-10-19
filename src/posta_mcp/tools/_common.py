@@ -1,7 +1,9 @@
 """Helpers shared by tool modules.
 
 Tools are plain sync functions: the SDK runs them in a worker thread, so blocking IMAP/SMTP
-calls are fine. Errors reaching the client must be short and contain no secrets.
+calls are fine. Errors reaching the client must be short and contain no secrets; when the
+failure is a known kind (wrong password, no network, ...) they start with plain-Turkish advice
+from `posta_mcp.hints`, followed by the English technical detail.
 """
 
 from __future__ import annotations
@@ -14,6 +16,7 @@ from typing import TypeVar
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import ToolAnnotations
 
+from posta_mcp.hints import classify, with_hint
 from posta_mcp.logs import redact
 
 log = logging.getLogger(__name__)
@@ -34,14 +37,18 @@ SEND = ToolAnnotations(
 
 @contextmanager
 def tool_errors(action: str) -> Iterator[None]:
-    """Turn any failure into a ToolError with a short, redacted message (no bodies, no secrets)."""
+    """Turn any failure into a ToolError with a short, redacted message (no bodies, no secrets).
+
+    Known failure kinds get the Turkish advice from `posta_mcp.hints` in front of the technical
+    detail, so a non-technical user (and the model relaying it) knows what to do.
+    """
     try:
         yield
     except ToolError:
         raise
     except Exception as exc:  # noqa: BLE001 - every error must be mapped for the client
-        log.warning("%s failed: %s", action, type(exc).__name__)
-        raise ToolError(f"{action} failed: {redact(str(exc))[:300]}") from None
+        log.warning("%s failed: %s (%s)", action, type(exc).__name__, classify(exc) or "-")
+        raise ToolError(with_hint(exc, f"{action} failed: {redact(str(exc))}")) from None
 
 
 def clamp_limit(limit: int) -> int:

@@ -50,6 +50,7 @@ from pydantic import BaseModel, Field
 
 from posta_mcp import compose, smtp
 from posta_mcp.attachments import load as load_attachments
+from posta_mcp.hints import with_hint
 from posta_mcp.logs import redact
 from posta_mcp.mime import strip_invisible
 from posta_mcp.tools._common import SEND, tool_errors
@@ -477,7 +478,7 @@ def register(server: MCPServer, deps: Any) -> None:
                 config, prepared.sender, list(prepared.recipients), prepared.wire
             )
         except smtp.SmtpError as exc:
-            raise ToolError(f"Sending failed; nothing was sent: {exc}") from None
+            raise ToolError(with_hint(exc, f"Sending failed; nothing was sent: {exc}")) from None
         log.info("sent a message to %d recipients", len(prepared.recipients))
         result = SendResult(
             status="sent",

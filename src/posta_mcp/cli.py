@@ -45,8 +45,11 @@ def _write_config(
 
 
 def try_imap_login(config: Config, password: str) -> str:
-    """Log in once over verified TLS. Returns a short status line; never includes the password."""
+    """Log in once over verified TLS. Returns exactly "OK", or a Turkish explanation of the
+    failure with a short technical tail; never includes the password."""
     from imapclient import IMAPClient
+
+    from posta_mcp.hints import with_hint
 
     context = make_ssl_context(config.ca_file)
     try:
@@ -60,20 +63,30 @@ def try_imap_login(config: Config, password: str) -> str:
             client.login(config.login, password)
             return "OK"
     except Exception as exc:  # noqa: BLE001 - report the failure kind, scrub anything secret-like
-        return redact(f"FAILED ({type(exc).__name__}: {exc})", password)
+        technical = redact(f"{type(exc).__name__}: {exc}", password)
+        return redact(with_hint(exc, technical, fallback="Giriş denemesi başarısız."), password)
 
 
 def cmd_serve(_: argparse.Namespace) -> int:
     configure_logging()
-    from posta_mcp.server import run
+    from posta_mcp.hints import setup_problem
+    from posta_mcp.server import run, run_setup_required
 
+    # Unusable settings do not stop the server: it starts in a minimal "kurulum gerekli" mode
+    # (no mailbox access) whose server_info explains the fix, instead of a bare "failed".
     try:
         config = load_config()
     except ConfigError as exc:
-        return _fail(str(exc))
-    if config.missing():
-        return _fail(f"missing settings: {', '.join(config.missing())}. Run `posta-mcp setup`.")
-    run(config)
+        problem, detail = setup_problem(error=exc), str(exc)
+    else:
+        if not config.missing():
+            run(config)
+            return 0
+        problem = setup_problem(missing=config.missing())
+        detail = f"missing settings: {', '.join(config.missing())}"
+    # English on stderr: a piped stderr on Windows may not be able to encode Turkish letters.
+    print(f"posta-mcp: setup required ({detail}); serving setup help only.", file=sys.stderr)
+    run_setup_required(problem)
     return 0
 
 

@@ -579,6 +579,20 @@ async def test_failed_smtp_send_leaves_draft_and_sent_untouched(mode, monkeypatc
     assert mb.moved == [] and mb.appended == []
 
 
+@pytest.mark.anyio
+@pytest.mark.parametrize("mode", MODES)
+async def test_rejected_smtp_login_carries_the_turkish_hint(mode, monkeypatch):
+    def reject(self, *a):
+        raise smtplib.SMTPAuthenticationError(535, b"bad credentials " + PASSWORD.encode())
+
+    monkeypatch.setattr(FakeSMTP, "login", reject)
+    mb = FakeMailbox(drafts={7: compose.message_bytes(_draft_msg())})
+    async with client_for(make_config(), mb, mode, Asker()) as c:
+        r = await c.call_tool("send_draft", {"uid": 7})
+    assert r.is_error and "Giriş başarısız" in text(r)
+    assert "nothing was sent" in text(r) and PASSWORD not in text(r)
+
+
 # --- what the dialog must disclose, and what it must refuse ------------------------------------
 
 

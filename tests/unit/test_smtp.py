@@ -135,8 +135,9 @@ def test_starttls_order_is_ehlo_check_starttls_ehlo_login_send():
 
 def test_starttls_missing_extension_refuses_before_login_or_send():
     FakeSMTP.offers_starttls = False
-    with pytest.raises(smtp.SmtpError, match="STARTTLS"):
+    with pytest.raises(smtp.SmtpError, match="STARTTLS") as info:
         smtp.send(make_config("starttls"), make_msg())
+    assert info.value.kind == "insecure"
     j = names(FakeSMTP.journal)
     assert "login" not in j and "sendmail" not in j and "starttls" not in j
     assert j[-1] in ("quit", "close")  # connection is closed
@@ -213,9 +214,29 @@ def test_missing_password_is_a_clear_secret_free_error(monkeypatch):
     import keyring
 
     monkeypatch.setattr(keyring, "get_password", lambda *a: None)
-    with pytest.raises(smtp.SmtpError, match="No password"):
+    with pytest.raises(smtp.SmtpError, match="No password") as info:
         smtp.send(make_config("ssl"), make_msg())
+    assert info.value.kind == "no_password"
     assert FakeSMTPSSL.journal == []
+
+
+@pytest.mark.parametrize(
+    "where,exc,kind",
+    [
+        ("login", smtplib.SMTPAuthenticationError(535, b"bad credentials"), "auth"),
+        ("sendmail", smtplib.SMTPRecipientsRefused({"a@b.c": (550, b"x")}), "recipient"),
+        ("sendmail", ssl.SSLCertVerificationError(1, "certificate verify failed"), "tls"),
+        ("sendmail", ConnectionRefusedError(), "unreachable"),
+        ("sendmail", TimeoutError(), "timeout"),
+        ("sendmail", smtplib.SMTPDataError(554, b"rejected"), None),
+    ],
+)
+def test_errors_carry_a_kind_for_the_turkish_hint(where, exc, kind, monkeypatch):
+    monkeypatch.setattr(FakeSMTPSSL, "fail_login", exc if where == "login" else None)
+    monkeypatch.setattr(FakeSMTPSSL, "fail_sendmail", exc if where == "sendmail" else None)
+    with pytest.raises(smtp.SmtpError) as info:
+        smtp.send(make_config("ssl"), make_msg())
+    assert info.value.kind == kind
 
 
 def test_no_recipients_is_refused():
