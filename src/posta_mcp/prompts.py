@@ -14,7 +14,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from mcp.server.mcpserver import MCPServer
 
-    from posta_mcp.server import Deps
 
 LANGUAGES = {"tr": "Turkish", "en": "English", "de": "German", "fr": "French", "es": "Spanish"}
 _SAFE_LANGUAGE = re.compile(r"[A-Za-z][A-Za-z -]{0,29}")
@@ -155,32 +154,32 @@ def register_baslangic(server: MCPServer) -> None:
 
     @server.prompt(
         name="baslangic",
-        description="Başlangıç: check the connection and show what posta-mcp can do.",
+        description="Başlangıç: bağlantıyı dener ve neler yapabildiğini anlatır.",
     )
     def baslangic(language: str = "tr") -> str:
         return render_baslangic(language)
 
 
-def register(server: MCPServer, deps: Deps) -> None:
+def register(server: MCPServer) -> None:
     register_baslangic(server)
 
     @server.prompt(
         name="hoca-ozet",
-        description="Hoca özeti: summarise recent email from professors and staff.",
+        description="Hoca özeti: hocalardan ve personelden gelen son postaları özetler.",
     )
     def hoca_ozet(days: int = 7, language: str = "tr") -> str:
         return render_prompt(_HOCA, days, language)
 
     @server.prompt(
         name="ogrenci-ozet",
-        description="Öğrenci özeti: summarise recent email from other students.",
+        description="Öğrenci özeti: öğrencilerden gelen son postaları özetler.",
     )
     def ogrenci_ozet(days: int = 7, language: str = "tr") -> str:
         return render_prompt(_OGRENCI, days, language)
 
     @server.prompt(
         name="bana-ozet",
-        description="Bana özel özet: school news relevant to your interests and places.",
+        description="Bana özel özet: ilgi alanlarına göre okul duyurularını özetler.",
     )
     def bana_ozet(days: int = 7, language: str = "tr") -> str:
         return render_prompt(_BANA, days, language)

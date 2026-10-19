@@ -299,7 +299,7 @@ def test_live_verify_compare_folders(lv):
     assert result["sent"][0] == lv.OK and "SPECIAL-USE agrees" in result["sent"][1]
     assert result["drafts"][0] == lv.OK
     assert result["trash"][0] == lv.MISMATCH and "Deleted Items" in result["trash"][1]
-    assert result["archive"][0] == lv.MISMATCH and "not found" in result["archive"][1]
+    assert result["archive"][0] == lv.OK and "created on first archive" in result["archive"][1]
 
 
 def test_live_verify_charset_names_never_returns_content(lv):

@@ -1,4 +1,4 @@
-"""Files from this computer attached to outgoing mail (posta_gonder, taslak_olustur).
+"""Files from this computer attached to outgoing mail (posta_gonder, taslak_olustur, yanit_taslagi_olustur).
 
 Attaching a local file is a way for data to leave the machine, so paths are checked strictly:
 

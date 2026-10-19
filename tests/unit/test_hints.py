@@ -230,6 +230,11 @@ class _FakeIMAPClient:
     def __exit__(self, *exc):
         return None
 
+    def has_capability(self, name):
+        return name in type(self).capabilities
+
+    capabilities: tuple[str, ...] = ("STARTTLS",)
+
     def starttls(self, **kw):
         pass
 
@@ -241,8 +246,28 @@ class _FakeIMAPClient:
 @pytest.fixture
 def fake_imapclient(monkeypatch):
     _FakeIMAPClient.login_error = _FakeIMAPClient.connect_error = None
+    _FakeIMAPClient.capabilities = ("STARTTLS",)
     monkeypatch.setattr("imapclient.IMAPClient", _FakeIMAPClient)
     return _FakeIMAPClient
+
+
+def test_try_imap_login_refuses_a_server_without_starttls(fake_imapclient):
+    starttls = CONFIG.model_copy(
+        update={"imap": CONFIG.imap.model_copy(update={"security": "starttls", "port": 143})}
+    )
+    fake_imapclient.capabilities = ()
+    status = try_imap_login(starttls, PASSWORD)
+    assert status.startswith("Sunucu şifreli bağlantı (STARTTLS) sunmadığı için")
+    fake_imapclient.capabilities = ("STARTTLS",)
+    assert try_imap_login(starttls, PASSWORD) == "OK"
+
+
+def test_setup_commands_match_this_installation():
+    from posta_mcp.setup_wizard import own_command
+
+    assert hints.SETUP_COMMAND == own_command("setup")
+    assert hints.PASSWORD_COMMAND == own_command("parola")
+    assert f"`{hints.PASSWORD_COMMAND}`" in hints.HINTS["auth"]
 
 
 def test_try_imap_login_success_is_exactly_ok(fake_imapclient):
@@ -279,7 +304,7 @@ def test_setup_problem_texts():
     assert "e-posta adresi" in missing and "IMAP sunucu adresi" in missing
     bad = hints.setup_problem(error=ConfigError("Unknown preset 'x'. Available: bogazici."))
     assert "Ayarlarda bir sorun var" in bad and "Unknown preset" in bad
-    assert "uvx posta-mcp setup" in hints.SETUP_STEPS
+    assert "posta-mcp setup" in hints.SETUP_STEPS
     assert "Ayarlar > Uzantılar" in hints.SETUP_STEPS and "sohbete yazma" in hints.SETUP_STEPS
 
 
@@ -295,7 +320,7 @@ async def test_setup_server_offers_only_server_info_and_baslangic():
     assert tools == {"sunucu_bilgisi"} and prompts == {"baslangic"}
     data = info.structured_content
     assert data["setup_required"] is True and data["problem"] == problem
-    assert "uvx posta-mcp setup" in data["what_to_do"]
+    assert "posta-mcp setup" in data["what_to_do"]
     assert "Ayarlar > Uzantılar > Boğaziçi Postanesi" in data["what_to_do"]
     assert "setup_required" in intro.messages[0].content.text
     assert missing.is_error  # no mailbox tools at all in this mode

@@ -6,7 +6,7 @@ Safety properties (see SPEC section 1):
 
 * TLS is always verified (`tls.make_ssl_context`); `ssl` is implicit TLS, `starttls` upgrades
   *before* login and refuses to log in when STARTTLS is missing or fails. No plaintext path.
-* Message data is fetched only with ``BODY.PEEK[...]``; ``\\Seen`` is set only on request.
+* Message data is fetched only with ``BODY.PEEK[...]``; ``\\Seen`` changes only via ``set_flags``.
 * Nothing is ever permanently deleted: no plain ``EXPUNGE`` and no ``CLOSE`` (which silently
   expunges ``\\Deleted`` messages) is issued. Moves use ``UID MOVE`` or ``UID COPY`` +
   ``\\Deleted`` + ``UID EXPUNGE <exactly those uids>`` (UIDPLUS); otherwise we refuse.
@@ -17,7 +17,6 @@ from __future__ import annotations
 import imaplib
 import logging
 import re
-import socket
 import ssl
 from collections.abc import Callable, Iterable, Iterator
 from contextlib import contextmanager
@@ -60,7 +59,8 @@ _FETCH_BATCH = 200
 
 @dataclass(frozen=True)
 class SearchCriteria:
-    """All set fields are ANDed. Strings are matched by the server (IMAP SEARCH, CHARSET UTF-8)."""
+    """All set fields are ANDed. Strings are matched by the server (IMAP SEARCH; CHARSET UTF-8
+    when a value is not ASCII)."""
 
     from_: str | None = None
     to: str | None = None
@@ -105,7 +105,7 @@ def _describe(exc: BaseException) -> str:
         return f"TLS certificate verification failed ({exc.verify_message})"
     if isinstance(exc, ssl.SSLError):
         return f"TLS error ({exc.reason or type(exc).__name__})"
-    if isinstance(exc, TimeoutError | socket.timeout):
+    if isinstance(exc, TimeoutError):  # socket.timeout is an alias
         return "timed out"
     if isinstance(exc, OSError):
         return f"network error ({type(exc).__name__})"
@@ -162,7 +162,6 @@ class Mailbox:
         self._timeout = timeout
         self._client: Any = None
         self._selected: tuple[str, bool] | None = None
-        self._folders: list[FolderInfo] | None = None
 
     # ------------------------------------------------------------------ connection
 
@@ -257,17 +256,13 @@ class Mailbox:
                 (_SPECIAL_FLAGS[f.lower()] for f in names if f.lower() in _SPECIAL_FLAGS), None
             )
             out.append(FolderInfo(name=str(name), flags=names, special_use=role))
-        self._folders = out
         return out
 
-    def _folder_names(self, refresh: bool = False) -> list[FolderInfo]:
-        return self.list_folders() if refresh or self._folders is None else self._folders
-
     def folder_exists(self, name: str) -> bool:
-        return any(f.name == name for f in self._folder_names(refresh=True))
+        return any(f.name == name for f in self.list_folders())
 
     def _find_special(self, role: SpecialRole) -> str | None:
-        folders = self._folder_names(refresh=True)
+        folders = self.list_folders()
         for f in folders:  # 1. SPECIAL-USE attribute
             if f.special_use == role:
                 return f.name
@@ -302,7 +297,6 @@ class Mailbox:
         name = getattr(self.config.folders, role)
         with _errors(f"creating folder '{name}'"):
             self.client.create_folder(name)
-        self._folders = None
         return name
 
     # ------------------------------------------------------------------ search / fetch
@@ -378,7 +372,9 @@ class Mailbox:
         self._select(folder, readonly=readonly)
         with _errors("message size check"):
             size = (self.client.fetch([uid], ["RFC822.SIZE"]).get(uid) or {}).get(b"RFC822.SIZE")
-        if isinstance(size, int) and size > MAX_MESSAGE_BYTES:
+        if not isinstance(size, int):  # no such uid, or a server that hides the size
+            raise MailboxError(f"No message with uid {uid} in '{folder}'.")
+        if size > MAX_MESSAGE_BYTES:
             raise MailboxError(
                 f"Message {uid} is too large to read ({size // (1024 * 1024)} MB; "
                 f"the limit is {MAX_MESSAGE_BYTES // (1024 * 1024)} MB)."
@@ -391,14 +387,9 @@ class Mailbox:
             raise MailboxError(f"No message with uid {uid} in '{folder}'.")
         return bytes(raw), normalize_flags(item.get(b"FLAGS", ()))
 
-    def fetch(self, folder: str, uid: int, mark_seen: bool = False) -> ParsedMessage:
-        """Full message via BODY.PEEK[]; sets \\Seen only if `mark_seen`."""
-        raw, flags = self._fetch_full(folder, uid, readonly=not mark_seen)
-        if mark_seen:
-            with _errors("marking message as read"):
-                self.client.add_flags([uid], [_SEEN])
-            if "\\Seen" not in flags:
-                flags.append("\\Seen")
+    def fetch(self, folder: str, uid: int) -> ParsedMessage:
+        """Full message via BODY.PEEK[] on a read-only selection; never sets \\Seen."""
+        raw, flags = self._fetch_full(folder, uid, readonly=True)
         return parse_message(raw, uid, folder, flags)
 
     def fetch_raw(self, folder: str, uid: int) -> bytes:

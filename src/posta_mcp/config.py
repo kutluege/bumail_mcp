@@ -19,7 +19,8 @@ Security = Literal["ssl", "starttls"]  # plaintext is intentionally not represen
 
 
 class ConfigError(ValueError):
-    """Bad configuration. Messages never include values, only field names."""
+    """Bad configuration. Messages never include secrets: at most field names, the preset
+    name and the email domain."""
 
 
 class _Model(BaseModel):

@@ -63,10 +63,11 @@ BODY_PREVIEW_CHARS = 4000
 PENDING_TTL_SECONDS = 30 * 60
 
 DISABLED_MESSAGE = (
-    "Sending is disabled, so nothing was sent. Only the user can turn it on: set "
-    "`enabled = true` under `[sending]` in posta-mcp's config.toml, or set the environment "
-    "variable POSTA_ALLOW_SEND=1 for the MCP server, then restart it. This assistant cannot "
-    "enable sending. Meanwhile, use taslak_olustur (or yanit_taslagi_olustur) to save the message "
+    "Sending is disabled, so nothing was sent. Only the user can turn it on: in Claude "
+    "Desktop with the 'E-posta göndermeye izin ver' setting under Ayarlar > Uzantılar > "
+    "Boğaziçi Postanesi; in Claude Code with POSTA_ALLOW_SEND=1 for the MCP server (it "
+    "overrides config.toml) or `enabled = true` under `[sending]` in config.toml, then "
+    "restart. This assistant cannot enable sending. Meanwhile, use taslak_olustur (or yanit_taslagi_olustur) to save the message "
     "in Drafts so the user can review and send it from their mail client."
 )
 NO_ELICITATION_MESSAGE = (
@@ -324,12 +325,15 @@ def _prepare(
 
 
 def _can_elicit(ctx: Context) -> bool:
+    """Form elicitation support; a bare `elicitation: {}` (older clients) means form."""
     caps = ctx.client_capabilities
-    return bool(caps and caps.elicitation and caps.elicitation.form is not None)
+    e = caps.elicitation if caps else None
+    return e is not None and (e.form is not None or e.url is None)
 
 
-def _failed(exc: Exception) -> ToolError:
-    return ToolError(redact(str(exc))[:300])
+def _addresses(msg: EmailMessage, name: str) -> list[str]:
+    """Every address in the `name` header(s) of a composed message, one string each."""
+    return [str(a) for header in msg.get_all(name, []) for a in header.addresses]
 
 
 def register(server: MCPServer, deps: Any) -> None:
@@ -337,7 +341,7 @@ def register(server: MCPServer, deps: Any) -> None:
     store = _Store()
 
     def gate(ctx: Context) -> None:
-        """Checks (a) and (b): raise ToolError with a refusal before anything else happens."""
+        """Checks 1 and 2: raise ToolError with a refusal before anything else happens."""
         if not config.send_enabled:
             raise ToolError(DISABLED_MESSAGE)
         if not _can_elicit(ctx):
@@ -373,10 +377,10 @@ def register(server: MCPServer, deps: Any) -> None:
             # Explicit arguments win over the reply defaults.
             msg = compose.build_message(
                 config.email,
-                to or [str(a) for a in draft.get_all("To", [])],
+                to or _addresses(draft, "To"),
                 subject or str(draft["Subject"]),
                 draft.get_content(),
-                cc or [str(a) for a in draft.get_all("Cc", [])],
+                cc or _addresses(draft, "Cc"),
                 bcc,
                 in_reply_to=draft["In-Reply-To"],
                 references=draft["References"],

@@ -1,5 +1,5 @@
 # Files excluded from the .mcpb bundle. The bundle must keep: manifest.json, pyproject.toml,
-# README.md, LICENSE, uv.lock and src/ (the host builds the project with `uv run`).
+# README.md, LICENSE, icon.png, uv.lock and src/ (the host builds the project with `uv run`).
 .venv/
 .git/
 .github/
@@ -20,4 +20,5 @@ scripts/
 .gitignore
 .python-version
 .mcpbignore
+server.json
 node_modules/

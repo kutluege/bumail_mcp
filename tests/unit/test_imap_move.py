@@ -107,7 +107,7 @@ def test_no_plain_expunge_or_close_in_any_path(caps):
         client = FakeIMAPClient.instances[-1]
         mb.set_flags("INBOX", [1, 2], seen=True, flagged=False)
         mb.search("INBOX", SearchCriteria(unseen=True))
-        mb.fetch("INBOX", 1, mark_seen=True)
+        mb.fetch("INBOX", 1)
         mb.append("Archive", b"Subject: x\r\n\r\nbody", ("\\Draft",))
         mb.ensure_special_folder("drafts")
         for uid, dest in ((2, "Trash"), (3, "Archive")):

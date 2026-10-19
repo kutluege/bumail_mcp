@@ -56,6 +56,7 @@ def try_imap_login(config: Config, password: str) -> str:
     from imapclient import IMAPClient
 
     from posta_mcp.hints import with_hint
+    from posta_mcp.imap import MailboxError
 
     context = make_ssl_context(config.ca_file)
     try:
@@ -65,6 +66,10 @@ def try_imap_login(config: Config, password: str) -> str:
         )
         with client:
             if imap.security == "starttls":
+                if not client.has_capability("STARTTLS"):  # same refusal as Mailbox
+                    raise MailboxError(
+                        "Server does not offer STARTTLS; not logging in.", kind="insecure"
+                    )
                 client.starttls(ssl_context=context)
             client.login(config.login, password)
             return "OK"

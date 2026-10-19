@@ -22,10 +22,12 @@ from collections.abc import Iterable
 from imapclient import exceptions as imap_exc
 
 from posta_mcp.logs import redact
+from posta_mcp.setup_wizard import own_command
 
 DESKTOP_SETTINGS = "Ayarlar > Uzantılar > Boğaziçi Postanesi"
-SETUP_COMMAND = "uvx posta-mcp setup"
-PASSWORD_COMMAND = "uvx posta-mcp parola"  # re-asks only the password
+# The command lines match how this copy is installed (git, source checkout, or PyPI).
+SETUP_COMMAND = own_command("setup")
+PASSWORD_COMMAND = own_command("parola")  # re-asks only the password
 _WHERE_TO_FIX = f"Claude Desktop: {DESKTOP_SETTINGS}; Claude Code: `{PASSWORD_COMMAND}`"
 _NO_CHAT_PASSWORD = "Parolanı sohbete yazma."
 

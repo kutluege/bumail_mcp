@@ -14,8 +14,8 @@ from mcp.server.mcpserver.exceptions import ToolError
 
 from posta_mcp import mime
 from posta_mcp.imap import SearchCriteria
-from posta_mcp.server import READ_ONLY, Deps
-from posta_mcp.tools._common import clamp_limit, with_mailbox
+from posta_mcp.server import Deps
+from posta_mcp.tools._common import READ_ONLY, clamp_limit, with_mailbox
 from posta_mcp.untrusted import one_line, render_message, render_summaries, wrap_untrusted
 
 MIN_CHARS, MAX_CHARS = 200, 200_000

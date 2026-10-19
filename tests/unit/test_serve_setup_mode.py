@@ -104,7 +104,7 @@ def test_unconfigured_server_starts_over_stdio_and_explains_setup(tmp_path):
         info = call(3, "tools/call", {"name": "sunucu_bilgisi", "arguments": {}})["result"]
         data = info["structuredContent"]
         assert data["setup_required"] is True and "e-posta adresi" in data["problem"]
-        assert "uvx posta-mcp setup" in data["what_to_do"]
+        assert "posta-mcp setup" in data["what_to_do"]
         prompts = [p["name"] for p in call(4, "prompts/list")["result"]["prompts"]]
         assert prompts == ["baslangic"]
     finally:

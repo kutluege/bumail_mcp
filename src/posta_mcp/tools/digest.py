@@ -8,13 +8,12 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any
 
-from mcp.types import ToolAnnotations
 from pydantic import BaseModel, Field
 
 from posta_mcp import profile as profile_store
 from posta_mcp.classify import Rules
 from posta_mcp.digest import category_digest, personal_digest
-from posta_mcp.tools._common import WRITE, clamp_limit, tool_errors, with_mailbox
+from posta_mcp.tools._common import READ_ONLY, WRITE, clamp_limit, tool_errors, with_mailbox
 
 if TYPE_CHECKING:
     from mcp.server.mcpserver import MCPServer
@@ -22,11 +21,6 @@ if TYPE_CHECKING:
     from posta_mcp.server import Deps
 
 log = logging.getLogger(__name__)
-
-# Reads the mailbox (never sets \Seen) and local profile; nothing is modified.
-READ_ONLY = ToolAnnotations(
-    readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False
-)
 
 
 class InterestInput(BaseModel):

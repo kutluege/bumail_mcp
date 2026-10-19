@@ -69,7 +69,7 @@ _BAD_CODECS = {
 }
 # Bytes that are ı İ ş Ş ğ Ğ in ISO-8859-9/1254 but ý Ý þ Þ ð Ð in Latin-1 (a common mislabel).
 _TURKISH_HINT = re.compile(rb"[\xd0\xdd\xde\xf0\xfd\xfe]")
-_FALLBACKS = ("cp1254", "iso-8859-9", "latin-1")
+_FALLBACKS = ("cp1254", "iso-8859-9")  # iso-8859-9 maps every byte, so this always ends here
 
 
 def _try(data: bytes, codec: str) -> str | None:
@@ -83,7 +83,7 @@ def decode_bytes(data: bytes, charset: str | None = None) -> str:
     """Decode ``data`` using a (possibly wrong or missing) declared charset; never raises.
 
     Order: declared exotic charset (strict) -> UTF-8 -> Turkish hint for Latin-1 labels ->
-    declared charset -> windows-1254 -> iso-8859-9 -> latin-1 with replacement.
+    declared charset -> windows-1254 -> iso-8859-9.
     """
     if not data:
         return ""
@@ -103,7 +103,7 @@ def decode_bytes(data: bytes, charset: str | None = None) -> str:
     for c in (codec, *_FALLBACKS):
         if c and (text := _try(data, c)) is not None:
             return text
-    return data.decode("latin-1", errors="replace")
+    return data.decode("latin-1", errors="replace")  # unreachable safety net
 
 
 # --------------------------------------------------------------------------- text hygiene
@@ -446,9 +446,14 @@ def _decode_text_part(part: Message, data: bytes) -> str:
     return decode_bytes(data, charset)
 
 
+def _is_flat_multipart(part: Message) -> bool:
+    """A multipart without a usable boundary: the parser leaves its payload as one string."""
+    return part.get_content_maintype() == "multipart" and not isinstance(part.get_payload(), list)
+
+
 def _is_body(part: Message, filename: str) -> bool:
     return (
-        part.get_content_type() in ("text/plain", "text/html")
+        (part.get_content_type() in ("text/plain", "text/html") or _is_flat_multipart(part))
         and part.get_content_disposition() != "attachment"
         and not filename
     )
@@ -489,11 +494,6 @@ def parse_message(raw: bytes, uid: int, folder: str, flags: Any = ()) -> ParsedM
     """Parse a full RFC 5322 message.  Within an alternative, prefers text/plain; standalone HTML
     parts (not an alternative of a plain part) are rendered and kept in reading order."""
     msg = message_from_bytes(raw, policy=policy.compat32)
-    html = [
-        _render_body_part(leaf)
-        for leaf in _leaves(msg)
-        if leaf.get_content_type() == "text/html" and _is_body(leaf, _filename(leaf))
-    ]
     attachments = [
         Attachment(
             filename=name or f"attachment-{i}",
@@ -514,7 +514,6 @@ def parse_message(raw: bytes, uid: int, folder: str, flags: Any = ()) -> ParsedM
         in_reply_to=next(iter(_MSGID.findall(_header_text(h.get("in-reply-to")))), None),
         references=_MSGID.findall(_header_text(h.get("references"))),
         text_body="\n\n".join(p for p in _readable_parts(msg) if p),
-        html_text="\n\n".join(p for p in html if p),
         attachments=attachments,
         **header_fields(msg),
     )
@@ -539,8 +538,8 @@ def get_attachment_text(raw: bytes, index: int, max_chars: int = 20000) -> str:
         # The content type is sender-controlled, so it is deliberately not echoed.
         raise ValueError(f"Attachment {index} is not a text-like file (type omitted).")
     text = _decode_text_part(part, _payload(part))
-    if part.get_content_type() == "text/html":
-        text = html_to_text(text)
+    if part.get_content_type() == "text/html" or filename.lower().endswith((".html", ".htm")):
+        text = html_to_text(text)  # drops scripts and hidden text, as for HTML bodies
     text = strip_invisible(text.replace("\r\n", "\n").replace("\r", "\n"))
     return truncate_text(text, max_chars)
 

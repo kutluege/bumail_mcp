@@ -495,6 +495,38 @@ async def test_reply_threads_and_defaults_recipient_and_subject(mode):
 
 @pytest.mark.anyio
 @pytest.mark.parametrize("mode", MODES)
+async def test_reply_all_with_several_recipients_is_sent_to_each(mode):
+    original = _original().model_copy(update={"to": [ME, "a@example.org", "b@example.org"]})
+    mb = FakeMailbox(originals={("INBOX", 5): original})
+    args = {"to": [], "subject": "", "body": "Tamam.", "reply_to_folder": "INBOX"}
+    async with client_for(make_config(), mb, mode, Asker()) as c:
+        r = await c.call_tool("posta_gonder", {**args, "reply_to_uid": 5, "reply_all": True})
+    assert r.structured_content["status"] == "sent", r
+    assert sorted(FakeSMTP.sent[0]["recipients"]) == [
+        "a@example.org",
+        "b@example.org",
+        "hoca@example.org",
+    ]
+
+
+def test_bare_elicitation_capability_counts_as_form_support():
+    from types import SimpleNamespace
+
+    from mcp.types import ClientCapabilities
+
+    from posta_mcp.tools.send import _can_elicit
+
+    def ctx(caps):
+        return SimpleNamespace(client_capabilities=ClientCapabilities.model_validate(caps))
+
+    assert _can_elicit(ctx({"elicitation": {}}))
+    assert _can_elicit(ctx({"elicitation": {"form": {}}}))
+    assert not _can_elicit(ctx({"elicitation": {"url": {}}}))
+    assert not _can_elicit(ctx({}))
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("mode", MODES)
 async def test_reply_folder_without_uid_is_refused(mode):
     async with client_for(make_config(), FakeMailbox(), mode, Asker()) as c:
         r = await c.call_tool("posta_gonder", {**ARGS, "reply_to_folder": "INBOX"})

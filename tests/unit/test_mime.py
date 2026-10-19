@@ -140,9 +140,8 @@ def test_recipients_with_commas_and_encoded_names():
     ]
 
 
-def test_html_only_alternative_uses_html_text():
+def test_html_only_alternative_is_rendered_to_text():
     m = load("alternative_html_only.eml")
-    assert m.text_body == m.html_text
     assert m.body == (
         "Merhaba öğrenciler,\n\n"
         "Duyuru: Güney Kampüs (https://www.bogazici.edu.tr/duyuru) yemekhanesi yarın kapalı.\n\n"
@@ -441,6 +440,24 @@ def test_parse_message_never_crashes_on_garbage():
                 pass
 
 
-def test_model_serialises_to_json_with_body():
+def test_model_serialises_to_json():
     data = load("from_student.eml").model_dump(mode="json")
-    assert data["body"].startswith("Hocam merhaba") and data["attachments"] == []
+    assert data["text_body"].startswith("Hocam merhaba") and data["attachments"] == []
+
+
+def test_html_attachment_sent_as_octet_stream_is_rendered_like_html():
+    part = MIMEBase("application", "octet-stream")
+    part.set_payload(b"<p>Liste</p><script>evil()</script><p hidden>gizli</p>")
+    part.add_header("Content-Disposition", "attachment", filename="liste.html")
+    raw = _multipart("mixed", MIMEText("Ekte.", "plain", "utf-8"), part)
+    text = get_attachment_text(raw, 0)
+    assert "Liste" in text and "evil" not in text and "gizli" not in text
+
+
+def test_multipart_without_boundary_is_read_as_text():
+    raw = (
+        b"Subject: x\r\nContent-Type: multipart/mixed\r\n\r\n"  # boundary parameter missing
+        b"Toplant\xc4\xb1 yar\xc4\xb1n saat 10'da.\r\n"
+    )
+    m = parse_message(raw, uid=1, folder="INBOX")
+    assert m.body == "Toplantı yarın saat 10'da." and m.attachments == []

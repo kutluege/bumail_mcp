@@ -1,4 +1,4 @@
-"""Live verification of a posta-mcp preset against YOUR real mail server (milestone M6).
+"""Live verification of a posta-mcp preset against YOUR real mail server .
 
 Run it yourself, on your own machine, with your own account:
 
@@ -129,6 +129,8 @@ def compare_folders(
         elif want in names:
             how = "SPECIAL-USE agrees" if flagged else "exists (server has no SPECIAL-USE for it)"
             out[role] = (OK, f"'{want}' {how}")
+        elif role == "archive":  # arsivle creates the configured folder on first use
+            out[role] = (OK, f"'{want}' not on the server yet; created on first archive")
         else:
             out[role] = (MISMATCH, f"'{want}' not found (folders: {len(names)})")
     return out
@@ -162,7 +164,7 @@ def edit_instructions(preset: str, variant: str, rows: Sequence[Row]) -> list[st
 
     if preset == "generic":
         return ["The generic preset has no unverified fields; there is nothing to mark verified."]
-    path = f"presets/{preset}.toml"
+    path = f"src/posta_mcp/presets/{preset}.toml"
     edits: list[str] = []
     for proto in ("imap", "smtp"):
         if all_ok(f"{proto}."):
@@ -179,8 +181,6 @@ def edit_instructions(preset: str, variant: str, rows: Sequence[Row]) -> list[st
             f"{path}: correct the mismatching names in [folders] to what the server uses, rerun, "
             "then set verified = true"
         )
-    if status.get("login") == OK:
-        edits.append(f"{path}: remove the '# unverified' comment on username_style (login worked)")
     if not edits:
         edits.append("No preset section was fully confirmed; do not set any verified = true.")
     edits.append(

@@ -342,7 +342,3 @@ class Matcher:
         """Names of the interests mentioned in any of ``texts`` (profile order)."""
         folded = fold("\n".join(t for t in texts if t))
         return [c.name for c in self._compiled if c.regex.search(folded)]
-
-
-def match_interests(profile: Profile, *texts: str) -> list[str]:
-    return Matcher(profile).match(*texts)

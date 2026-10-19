@@ -125,15 +125,24 @@ def test_bodies_fetched_only_with_peek_and_seen_untouched():
     assert not any(item in ("RFC822", "BODY[]") for item in fetched)
 
 
-def test_mark_seen_sets_flag_explicitly_after_peek():
+def test_fetch_selects_read_only_and_never_flags():
     folders = {"INBOX": {7: raw_message()}}
     with open_mailbox(folders=folders) as mb:
         client = FakeIMAPClient.instances[-1]
-        msg = mb.fetch("INBOX", 7, mark_seen=True)
-    assert "\\Seen" in msg.flags
+        msg = mb.fetch("INBOX", 7)
+    assert "\\Seen" not in msg.flags
     names = client.names()
-    assert names.index("fetch") < names.index("add_flags")
-    assert client.calls[names.index("select_folder")][1] == ("INBOX", False)
+    assert "add_flags" not in names
+    assert client.calls[names.index("select_folder")][1] == ("INBOX", True)
+
+
+def test_fetch_of_a_missing_uid_is_refused_before_the_body_fetch():
+    with open_mailbox(folders={"INBOX": {7: raw_message()}}) as mb:
+        client = FakeIMAPClient.instances[-1]
+        with pytest.raises(MailboxError, match="No message with uid 8"):
+            mb.fetch("INBOX", 8)
+    fetch_calls = [args for name, args in client.calls if name == "fetch"]
+    assert not any("BODY.PEEK[]" in items for _uids, items in fetch_calls)
 
 
 def test_oversized_message_is_refused_before_its_body_is_fetched():

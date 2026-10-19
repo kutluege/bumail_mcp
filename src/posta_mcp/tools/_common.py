@@ -25,9 +25,17 @@ T = TypeVar("T")
 
 MAX_LIMIT = 100
 
-# Changes mailbox state but nothing is lost (flags, moves to Trash, drafts).
+# Reads the mailbox (never sets \Seen) or local files; nothing is modified.
+READ_ONLY = ToolAnnotations(
+    readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False
+)
+# Changes mailbox state but nothing is lost (flags, moves to Trash, profile).
 WRITE = ToolAnnotations(
     readOnlyHint=False, destructiveHint=False, idempotentHint=True, openWorldHint=False
+)
+# Saves a new draft on every call (so not idempotent); nothing is sent.
+DRAFT = ToolAnnotations(
+    readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=False
 )
 # Leaves the user's machine and cannot be undone (sending mail).
 SEND = ToolAnnotations(

@@ -1,16 +1,15 @@
 """Message models shared by the IMAP layer, the tools and the composer.
 
-All models are pydantic ``BaseModel`` s so they serialise straight into tool output.
+All models are pydantic ``BaseModel`` s; tools render them as text through ``untrusted``.
 Every text field here is *untrusted* email data; wrap it with ``untrusted`` before showing
 it to a model.
 """
 
 from __future__ import annotations
 
-from email.message import Message
 from typing import Any
 
-from pydantic import BaseModel, Field, computed_field
+from pydantic import BaseModel, Field
 
 
 class MessageSummary(BaseModel):
@@ -33,7 +32,7 @@ class MessageSummary(BaseModel):
     @classmethod
     def from_headers(
         cls,
-        headers: bytes | Message,
+        headers: bytes,
         *,
         uid: int,
         folder: str,
@@ -41,12 +40,12 @@ class MessageSummary(BaseModel):
         size: int | None = None,
         has_attachments: bool | None = None,
     ) -> MessageSummary:
-        """Build a summary from raw header bytes (``BODY.PEEK[HEADER.FIELDS (...)]``) or a
-        parsed ``Message``.  Without BODYSTRUCTURE, ``has_attachments`` is guessed from
+        """Build a summary from raw header bytes (``BODY.PEEK[HEADER.FIELDS (...)]``).
+        Without BODYSTRUCTURE, ``has_attachments`` is guessed from
         ``Content-Type: multipart/mixed`` unless given explicitly."""
         from .mime import header_fields, parse_header_bytes
 
-        msg = parse_header_bytes(headers) if isinstance(headers, bytes) else headers
+        msg = parse_header_bytes(headers)
         fields = header_fields(msg)
         if has_attachments is None:
             has_attachments = msg.get_content_type() == "multipart/mixed"
@@ -74,14 +73,12 @@ class ParsedMessage(MessageSummary):
     in_reply_to: str | None = None
     references: list[str] = Field(default_factory=list)  # message-ids, oldest first
     text_body: str = ""  # readable body parts in order (text/plain preferred within alternatives)
-    html_text: str = ""  # text rendered from every text/html part
     attachments: list[Attachment] = Field(default_factory=list)
 
-    @computed_field  # type: ignore[prop-decorator]
     @property
     def body(self) -> str:
-        """Preferred readable body: `text_body` if it has content, else the HTML rendering."""
-        return self.text_body if self.text_body.strip() else self.html_text
+        """Readable body text (HTML parts already rendered to text)."""
+        return self.text_body
 
 
 def normalize_flags(flags: Any) -> list[str]:

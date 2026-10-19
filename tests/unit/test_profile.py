@@ -119,7 +119,7 @@ def test_matches_several_interests_in_profile_order():
     assert Matcher(p).match("yemekhane ve tenis", "") == ["tenis", "yemekhane"]
     assert Matcher(p).match("konu: tenis", "içerik: yemekhane") == ["tenis", "yemekhane"]
     assert Matcher(p).match("hiçbiri") == []
-    assert pf.match_interests(p, "TENİS") == ["tenis"]
+    assert pf.Matcher(p).match("TENİS") == ["tenis"]
 
 
 # --------------------------------------------------------------------------- storage

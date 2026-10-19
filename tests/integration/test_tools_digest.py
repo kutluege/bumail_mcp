@@ -56,8 +56,6 @@ def digest_tool(tool, tmp_path, monkeypatch):
 
     def call(name: str, **args):
         out = tool(name, **args)
-        if out.is_error and "NotImplementedError" in out.text:
-            pytest.skip("imap.Mailbox is not implemented yet (NotImplementedError)")
         assert not out.is_error, out.text
         return out.text
 

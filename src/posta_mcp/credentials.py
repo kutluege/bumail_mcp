@@ -67,6 +67,7 @@ def delete_password(username: str) -> bool:
         return False
     except KeyringError as exc:
         raise CredentialsError(
-            f"Parola anahtar zincirinden silinemedi ({type(exc).__name__}).", kind="keychain"
+            f"Could not delete the password from the keychain ({type(exc).__name__}).",
+            kind="keychain",
         ) from None
     return True

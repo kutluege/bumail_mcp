@@ -3,8 +3,7 @@
 The server never summarises: it picks recent messages, classifies them, and packages the
 relevant ones (headers plus a short body snippet) for the client model.  All email-derived text
 is wrapped with ``untrusted`` (non-negotiable #7); the text outside the wrappers is ours.
-Bodies are fetched with ``Mailbox.fetch`` and its default ``mark_seen=False`` (PEEK), so
-nothing becomes \\Seen.
+Bodies are fetched with ``Mailbox.fetch`` (read-only BODY.PEEK), so nothing becomes \\Seen.
 """
 
 from __future__ import annotations
@@ -75,14 +74,12 @@ def _counts(items: list[Candidate]) -> str:
 def _clean_body(msg: ParsedMessage) -> ParsedMessage:
     """Drop quoted-reply lines and blank runs so the snippet is mostly new text."""
     text = _BLANKS.sub("\n\n", _QUOTED.sub("", msg.body)).strip()
-    return msg.model_copy(update={"text_body": text, "html_text": ""})
+    return msg.model_copy(update={"text_body": text})
 
 
 def _fetch(mb: Any, folder: str, cand: Candidate) -> bool:
     try:
-        cand.message = mb.fetch(folder, cand.summary.uid)  # default mark_seen=False (PEEK)
-    except NotImplementedError:
-        raise
+        cand.message = mb.fetch(folder, cand.summary.uid)  # read-only, BODY.PEEK
     except Exception as exc:  # noqa: BLE001 - one unreadable message must not sink the digest
         log.warning("digest: fetch uid=%s failed: %s", cand.summary.uid, type(exc).__name__)
         return False
@@ -169,7 +166,7 @@ def category_digest(
 
 
 EMPTY_PROFILE_GUIDANCE = (
-    "bana-ozet: your interest profile is empty, so there is nothing to personalise yet.\n\n"
+    "bana_ozet: your interest profile is empty, so there is nothing to personalise yet.\n\n"
     "Ask the user which places, services and activities they care about, then save them with "
     "the profili_guncelle tool, for example:\n"
     '  profili_guncelle(add_interests=[{"name": "Güney Kampüs"}, {"name": "yemekhane"}, '
@@ -218,7 +215,7 @@ def personal_digest(
     others.sort(key=lambda c: c.summary.date or "", reverse=True)
 
     head = [
-        f"bana-ozet: {len(matches)} school message(s) matching the user's interests in "
+        f"bana_ozet: {len(matches)} school message(s) matching the user's interests in "
         f"{one_line(folder, 80)}, since {since.isoformat()} ({days} days).",
         render_profile(profile),
         f"Scanned {len(scanned)} recent message(s), newest first: {_counts(scanned)}. "

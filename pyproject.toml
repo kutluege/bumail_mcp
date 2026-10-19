@@ -10,7 +10,6 @@ keywords = ["mcp", "model-context-protocol", "email", "imap", "smtp", "bogazici"
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: End Users/Desktop",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
@@ -46,7 +45,10 @@ build-backend = "hatchling.build"
 packages = ["src/posta_mcp"]  # includes presets/*.toml (package data)
 
 [tool.hatch.build.targets.sdist]
-include = ["src/posta_mcp", "tests", "scripts", "docs", "README.md", "LICENSE", "uv.lock"]
+include = [
+    "src/posta_mcp", "tests", "scripts", "docs", "README.md", "LICENSE", "uv.lock",
+    "manifest.json", "server.json", "icon.png", ".mcpbignore",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
