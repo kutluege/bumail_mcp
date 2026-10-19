@@ -108,7 +108,7 @@ Sunucular e-posta adresinin uzantısından seçilir; kullanıcı adı `@` önces
 | Hesap | Adres | IMAP | SMTP |
 |---|---|---|---|
 | Öğrenci (doğrulandı) | `@std.bogazici.edu.tr` | `imap.std.bogazici.edu.tr:993` | `smtp.std.bogazici.edu.tr:587` |
-| Personel (doğrulanmadı) | `@bogazici.edu.tr`, `@boun.edu.tr` | `imap.bogazici.edu.tr:993` | `smtp.bogazici.edu.tr:587` |
+| Personel (henüz doğrulanmadı / unverified) | `@bogazici.edu.tr`, `@boun.edu.tr` | `imap.bogazici.edu.tr:993` | `smtp.bogazici.edu.tr:587` |
 
 - `Archive` klasörü sunucuda yoktur; ilk arşivlemede oluşturulur.
 - Yarı zamanlı (`pt.`) ve emekli (`retired.`) hesaplarda `POSTA_IMAP_HOST` ve `POSTA_SMTP_HOST` değişkenlerini kendin vermelisin.
@@ -120,6 +120,7 @@ Sunucular e-posta adresinin uzantısından seçilir; kullanıcı adı `@` önces
 - Okuduğun postalar, kullandığın uygulamanın yapay zekâ sağlayıcısına (Claude için Anthropic'e) gönderilir.
 - Yapay zekâ postayı yanlış okuyabilir ya da yanlış özetleyebilir. Son tarihleri, notları ve sınav tarihlerini asıl postadan kontrol et.
 - Gönderme varsayılan olarak kapalıdır ve her zaman senin onayını ister. Gönderdiğin her şeyden sen sorumlusun.
+- Yazılım olduğu gibi sunulur; açık ya da örtülü hiçbir garanti verilmez.
 
 ## Geliştiriciler için
 
@@ -132,3 +133,5 @@ uv run posta-mcp setup      # Claude Code'a bu klasörü kullanan komutla ekler
 ```
 
 Testler: [docs/TESTING.md](docs/TESTING.md) · Tasarım: [docs/SPEC.md](docs/SPEC.md) · İstemciler: [docs/CLIENTS.md](docs/CLIENTS.md) · Sürüm ve doğrulama: [docs/HANDOFF.md](docs/HANDOFF.md)
+
+Lisans: MIT
