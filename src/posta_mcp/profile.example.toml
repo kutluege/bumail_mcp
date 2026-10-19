@@ -1,6 +1,6 @@
 # posta-mcp interest profile (used by the `bana-ozet` / "personalized summary" feature).
 # Copy to profile.toml in the posta-mcp config directory (see `posta-mcp doctor`), or let your
-# assistant manage it with the `update_profile` tool. Non-secret data only: never put
+# assistant manage it with the `profili_guncelle` tool. Non-secret data only: never put
 # passwords or anything private here.
 #
 # Matching ignores case and Turkish diacritics (Güney = GUNEY = güney) and accepts Turkish

@@ -3,7 +3,7 @@
 The ``tool`` fixture is re-exported by ``conftest.py``, so any integration test can use it::
 
     def test_x(tool):
-        out = tool("search_messages", folder="INBOX")
+        out = tool("postalari_ara", folder="INBOX")
         assert not out.is_error and "untrusted-email" in out.text
 """
 

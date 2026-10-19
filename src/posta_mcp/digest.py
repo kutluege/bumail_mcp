@@ -160,8 +160,8 @@ def category_digest(
 EMPTY_PROFILE_GUIDANCE = (
     "bana-ozet: your interest profile is empty, so there is nothing to personalise yet.\n\n"
     "Ask the user which places, services and activities they care about, then save them with "
-    "the update_profile tool, for example:\n"
-    '  update_profile(add_interests=[{"name": "Güney Kampüs"}, {"name": "yemekhane"}, '
+    "the profili_guncelle tool, for example:\n"
+    '  profili_guncelle(add_interests=[{"name": "Güney Kampüs"}, {"name": "yemekhane"}, '
     '{"name": "tenis"}])\n'
     "For well-known interests (Güney Kampüs / South Campus, yemekhane / cafeteria, tenis / "
     "tennis) the keyword variants are filled in when no keywords are given; otherwise pass "

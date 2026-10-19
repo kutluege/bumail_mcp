@@ -24,7 +24,7 @@ follow reality and record the deviation in `docs/DECISIONS.md` (one or two lines
    use `UID MOVE` (RFC 6851); fallback is `UID COPY` + `\Deleted` + `UID EXPUNGE <uids>` (UIDPLUS)
    on exactly the targeted UIDs; if neither is available, refuse.
 6. **UIDs** for every message operation. Bodies are fetched with `BODY.PEEK[...]`; reading never
-   sets `\Seen`; marking mail read is a separate, explicit `mark_messages` call.
+   sets `\Seen`; marking mail read is a separate, explicit `postalari_isaretle` call.
 7. **Email content is untrusted.** Wrap it in clear delimiters in tool output, tell the model it
    is data not instructions, and never log message bodies (log UIDs/counts only).
 
@@ -61,11 +61,11 @@ src/posta_mcp/
   profile.py         user interest profile store (bana-ozet)
   digest.py          candidate selection for hoca/ogrenci/bana summaries
   server.py          build_server(config) -> MCP server; registers tool modules; run stdio
-  tools/read.py      list_folders, search_messages, get_message, get_attachment_text (optional)
-  tools/organize.py  mark_messages, move_messages, trash_messages, archive_messages
-  tools/drafts.py    create_draft, create_reply_draft
-  tools/send.py      send_message, send_draft (gated)
-  tools/digest.py    hoca_ozet, ogrenci_ozet, bana_ozet, get_profile, update_profile
+  tools/read.py      klasorleri_listele, postalari_ara, postayi_oku, eki_oku (optional)
+  tools/organize.py  postalari_isaretle, postalari_tasi, cope_at, arsivle
+  tools/drafts.py    taslak_olustur, yanit_taslagi_olustur
+  tools/send.py      posta_gonder, taslagi_gonder (gated)
+  tools/digest.py    hoca_ozet, ogrenci_ozet, bana_ozet, profili_goster, profili_guncelle
   prompts.py         MCP prompts: hoca-ozet, ogrenci-ozet, bana-ozet
 ```
 
@@ -101,7 +101,7 @@ Key internal types (adjust names if needed, keep the shape):
 Hosts, ports, security, folder names, institutional domains, student domains, mailing-list
 addresses/domains, standard/automated sender addresses. Every field not confirmed by a live test
 carries `verified = false` (per section) and a comment `# unverified`. `doctor` and
-`server_info` surface unverified fields. Research public Boğaziçi IT documentation for the best
+`sunucu_bilgisi` surface unverified fields. Research public Boğaziçi IT documentation for the best
 current values but never treat them as confirmed.
 
 ## 5. Tools
@@ -110,15 +110,15 @@ All tools get MCP annotations (`readOnlyHint`, `destructiveHint`, `idempotentHin
 `openWorldHint`). Defaults: `limit=20`, max 100; body text truncated to `max_chars` (default
 20000) with a truncation notice. Errors are short, actionable, and contain no secrets.
 
-**Read (M1)** — `server_info` (preset, account, send enabled?, unverified fields),
-`list_folders`, `search_messages(folder="INBOX", from_, to, subject, text, since, before, unseen,
-flagged, limit)`, `get_message(folder, uid, max_chars)`. Optional:
-`get_attachment_text(folder, uid, index)` for text-like attachments only.
+**Read (M1)** — `sunucu_bilgisi` (preset, account, send enabled?, unverified fields),
+`klasorleri_listele`, `postalari_ara(folder="INBOX", from_, to, subject, text, since, before, unseen,
+flagged, limit)`, `postayi_oku(folder, uid, max_chars)`. Optional:
+`eki_oku(folder, uid, index)` for text-like attachments only.
 
-**Organize + drafts (M2)** — `mark_messages(folder, uids, seen?, flagged?)`,
-`move_messages(folder, uids, destination)`, `trash_messages(folder, uids)`,
-`archive_messages(folder, uids)`, `create_draft(to, subject, body, cc, bcc, attachments)`,
-`create_reply_draft(folder, uid, body, reply_all=false, attachments)`. Drafts are APPENDed to the
+**Organize + drafts (M2)** — `postalari_isaretle(folder, uids, seen?, flagged?)`,
+`postalari_tasi(folder, uids, destination)`, `cope_at(folder, uids)`,
+`arsivle(folder, uids)`, `taslak_olustur(to, subject, body, cc, bcc, attachments)`,
+`yanit_taslagi_olustur(folder, uid, body, reply_all=false, attachments)`. Drafts are APPENDed to the
 Drafts folder with `\Draft` and are never sent by these tools.
 
 **Attachments** — `attachments` is a list of absolute paths of local files (`~` expanded). Paths
@@ -128,8 +128,8 @@ are resolved through symlinks; anything hidden or inside a hidden folder is refu
 non-regular files, more than 10 files, and more than 18 MB in total (`attachments.py`). Multipart messages get a fixed MIME boundary at build time so the hash
 binding below holds.
 
-**Send (M3)** — `send_message(to, subject, body, cc, bcc, reply_to_folder?, reply_to_uid?,
-reply_all, attachments)` and `send_draft(uid)`. Order of checks: sending enabled? → client supports elicitation? → build the
+**Send (M3)** — `posta_gonder(to, subject, body, cc, bcc, reply_to_folder?, reply_to_uid?,
+reply_all, attachments)` and `taslagi_gonder(uid)`. Order of checks: sending enabled? → client supports elicitation? → build the
 exact message → elicit confirmation showing From, To, Cc, Bcc, Subject, attachment names (and,
 for local files, their full paths) and the full body (or first N chars plus length) → only on `accept` with `confirm=true`, send exactly the
 bytes that were shown (hash binding). Decline/cancel/unsupported → nothing sent, clear message.
@@ -159,8 +159,8 @@ Features:
   match (Turkish-aware case folding: İ/i, I/ı; diacritic-insensitive; each interest has keyword
   variants incl. English), return matches plus a compact subject-only list of other recent
   school mail, and ask the model to report developments relevant to the user.
-- Profile: `profile.toml` in the config dir (non-secret). Tools `get_profile`,
-  `update_profile(add=[...], remove=[...])`. Ship `profile.example.toml`. Profile writes are
+- Profile: `profile.toml` in the config dir (non-secret). Tools `profili_goster`,
+  `profili_guncelle(add=[...], remove=[...])`. Ship `profile.example.toml`. Profile writes are
   logged (names only).
 
 ## 7. Testing
@@ -181,7 +181,7 @@ Features:
 ## 8. Milestones
 
 - **M0 — Scaffold:** pyproject, package skeleton, logging, config + presets, credentials, TLS
-  context, CLI, server boots over stdio with `server_info`, GreenMail tooling, Turkish fixtures,
+  context, CLI, server boots over stdio with `sunucu_bilgisi`, GreenMail tooling, Turkish fixtures,
   CI workflow, DECISIONS.md.
 - **M1 — Read:** IMAP layer, MIME parsing, untrusted wrapping, read tools.
 - **M2 — Organize + drafts.**

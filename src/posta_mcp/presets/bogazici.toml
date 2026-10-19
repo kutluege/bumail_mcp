@@ -53,7 +53,7 @@ verified = true
 sent = "Sent"
 drafts = "Drafts"
 trash = "Trash"
-archive = "Archive"      # not on the server by default; archive_messages creates it on first use
+archive = "Archive"      # not on the server by default; arsivle creates it on first use
 
 [domains]
 verified = false        # unverified

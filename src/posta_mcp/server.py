@@ -1,7 +1,7 @@
 """MCP server assembly: builds the server, registers tool modules, runs over stdio.
 
 When the settings are missing or invalid, `build_setup_server` builds a minimal server instead
-("kurulum gerekli" mode): no mailbox access, only `server_info` (what is wrong and how to fix it,
+("kurulum gerekli" mode): no mailbox access, only `sunucu_bilgisi` (what is wrong and how to fix it,
 in Turkish) and the `baslangic` prompt. That way Claude Desktop users see a plain explanation
 instead of a server that failed to start.
 """
@@ -35,7 +35,7 @@ INSTRUCTIONS = (
 )
 
 SETUP_INSTRUCTIONS = (
-    "posta-mcp is not set up yet, so no mailbox tools are available. Call `server_info` and "
+    "posta-mcp is not set up yet, so no mailbox tools are available. Call `sunucu_bilgisi` and "
     "explain its Turkish `problem` and `what_to_do` to the user in plain words. Never ask the "
     "user to type their password into the chat."
 )
@@ -92,7 +92,7 @@ def build_server(
     server = MCPServer("posta-mcp", instructions=INSTRUCTIONS, version=__version__)
     deps = Deps(config, mailbox or default_mailbox(config))
 
-    @server.tool(name="server_info", annotations=READ_ONLY)
+    @server.tool(name="sunucu_bilgisi", annotations=READ_ONLY)
     def server_info() -> dict[str, Any]:
         """Show the active preset, account, connection hosts, and whether sending is enabled."""
         return {
@@ -117,7 +117,7 @@ def build_setup_server(problem: str) -> MCPServer:
 
     server = MCPServer("posta-mcp", instructions=SETUP_INSTRUCTIONS, version=__version__)
 
-    @server.tool(name="server_info", annotations=READ_ONLY)
+    @server.tool(name="sunucu_bilgisi", annotations=READ_ONLY)
     def server_info() -> dict[str, Any]:
         """posta-mcp is not set up yet: returns what is missing and how the user can fix it."""
         return {

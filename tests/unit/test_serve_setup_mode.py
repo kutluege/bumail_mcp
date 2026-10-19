@@ -100,8 +100,8 @@ def test_unconfigured_server_starts_over_stdio_and_explains_setup(tmp_path):
         assert init["result"]["serverInfo"]["name"] == "posta-mcp"
         proc.stdin.write(b'{"jsonrpc": "2.0", "method": "notifications/initialized"}\n')
         tools = [t["name"] for t in call(2, "tools/list")["result"]["tools"]]
-        assert tools == ["server_info"]
-        info = call(3, "tools/call", {"name": "server_info", "arguments": {}})["result"]
+        assert tools == ["sunucu_bilgisi"]
+        info = call(3, "tools/call", {"name": "sunucu_bilgisi", "arguments": {}})["result"]
         data = info["structuredContent"]
         assert data["setup_required"] is True and "e-posta adresi" in data["problem"]
         assert "uvx posta-mcp setup" in data["what_to_do"]

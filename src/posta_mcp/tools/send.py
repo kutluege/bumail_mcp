@@ -1,4 +1,4 @@
-"""Gated sending: ``send_message`` and ``send_draft``.
+"""Gated sending: ``posta_gonder`` and ``taslagi_gonder``.
 
 Safety design (SPEC non-negotiable #4)
 --------------------------------------
@@ -7,7 +7,7 @@ Order of checks, enforced by the *resolver* that runs before the tool body:
 1. Sending enabled?  (``config.send_enabled``: ``[sending] enabled`` or ``POSTA_ALLOW_SEND``.)
    If not, refuse and tell the user how to enable it themselves.  No tool can enable sending.
 2. Does the client support form elicitation?  If not, refuse (suggest a draft).
-3. Build the exact message (for ``send_draft``: fetch the draft).
+3. Build the exact message (for ``taslagi_gonder``: fetch the draft).
 4. Ask the human to confirm (``Annotated[ElicitationResult[Confirm], Resolve(fn)]``: works on
    both the handshake and the modern protocol era, unlike plain ``ctx.elicit``).
 5. Tool body: send only on ``accept`` with ``confirm == True``.
@@ -66,13 +66,13 @@ DISABLED_MESSAGE = (
     "Sending is disabled, so nothing was sent. Only the user can turn it on: set "
     "`enabled = true` under `[sending]` in posta-mcp's config.toml, or set the environment "
     "variable POSTA_ALLOW_SEND=1 for the MCP server, then restart it. This assistant cannot "
-    "enable sending. Meanwhile, use create_draft (or create_reply_draft) to save the message "
+    "enable sending. Meanwhile, use taslak_olustur (or yanit_taslagi_olustur) to save the message "
     "in Drafts so the user can review and send it from their mail client."
 )
 NO_ELICITATION_MESSAGE = (
     "This MCP client cannot ask the user for confirmation (no form elicitation support), so "
     "the message cannot be confirmed with the user and was NOT sent. Create a draft instead "
-    "(create_draft or create_reply_draft); the user can send it from their mail client."
+    "(taslak_olustur or yanit_taslagi_olustur); the user can send it from their mail client."
 )
 
 
@@ -527,7 +527,7 @@ def register(server: MCPServer, deps: Any) -> None:
                 f"Sent, but the mailbox could not be updated: {one_line(redact(str(exc)), 200)}"
             )
 
-    @server.tool(annotations=SEND)
+    @server.tool(name="posta_gonder", annotations=SEND)
     def send_message(
         to: list[str],
         subject: str,
@@ -546,7 +546,7 @@ def register(server: MCPServer, deps: Any) -> None:
         and, when `to`/`subject` are empty, recipients and subject come from that message).
         `attachments`: absolute paths of files on this computer to attach (max 10 files,
         18 MB in total; hidden files and folders are refused). Attach only files the user
-        asked for. Prefer create_draft when unsure."""
+        asked for. Prefer taslak_olustur when unsure."""
         if not config.send_enabled:  # defence in depth: the resolver already checked
             raise ToolError(DISABLED_MESSAGE)
         key = message_key(
@@ -566,7 +566,7 @@ def register(server: MCPServer, deps: Any) -> None:
             "No confirmed message is on record (expired?); NOT sent. Try again.",
         )
 
-    @server.tool(annotations=SEND)
+    @server.tool(name="taslagi_gonder", annotations=SEND)
     def send_draft(
         uid: int,
         decision: Annotated[ElicitationResult[Confirm], Resolve(confirm_draft)],

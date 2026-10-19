@@ -169,16 +169,16 @@ Claude'un kullandığı araçlar:
 
 | Ne için | Araçlar |
 |---|---|
-| Bilgi ve okuma | `server_info`, `list_folders`, `search_messages`, `get_message`, `get_attachment_text` |
-| Düzenleme | `mark_messages`, `move_messages`, `trash_messages`, `archive_messages` |
-| Taslak | `create_draft`, `create_reply_draft` |
-| Gönderme (kapalı, onay gerekir) | `send_message`, `send_draft` |
+| Bilgi ve okuma | `sunucu_bilgisi`, `klasorleri_listele`, `postalari_ara`, `postayi_oku`, `eki_oku` |
+| Düzenleme | `postalari_isaretle`, `postalari_tasi`, `cope_at`, `arsivle` |
+| Taslak | `taslak_olustur`, `yanit_taslagi_olustur` |
+| Gönderme (kapalı, onay gerekir) | `posta_gonder`, `taslagi_gonder` |
 | Özetler | `hoca_ozet`, `ogrenci_ozet`, `bana_ozet` |
-| İlgi profili | `get_profile`, `update_profile` |
+| İlgi profili | `profili_goster`, `profili_guncelle` |
 
 Bir aramada en fazla 100 sonuç gelir (varsayılan 20). Çok uzun posta metinleri 20.000 karakterde kesilir.
 
-**Dosya eki:** `send_message`, `create_draft` ve `create_reply_draft` bilgisayarındaki dosyaları ekleyebilir (`attachments`: dosyaların tam yolu). En fazla 10 dosya ve toplam 18 MB eklenebilir. Gizli dosya ve klasörler (`.ssh`, `.env`, Windows'ta `AppData` gibi) ve ağ yolları (`\\sunucu\paylaşım`) hiç eklenmez. Gönderirken açılan onay penceresinde her ekin adı, boyutu ve bilgisayardaki yeri gösterilir.
+**Dosya eki:** `posta_gonder`, `taslak_olustur` ve `yanit_taslagi_olustur` bilgisayarındaki dosyaları ekleyebilir (`attachments`: dosyaların tam yolu). En fazla 10 dosya ve toplam 18 MB eklenebilir. Gizli dosya ve klasörler (`.ssh`, `.env`, Windows'ta `AppData` gibi) ve ağ yolları (`\\sunucu\paylaşım`) hiç eklenmez. Gönderirken açılan onay penceresinde her ekin adı, boyutu ve bilgisayardaki yeri gösterilir.
 
 ## Göndermeyi açmak
 
@@ -194,7 +194,7 @@ enabled = true
 
 `config.toml` dosyasının yerini `posta-mcp doctor` gösterir.
 
-Açtıktan sonra bile `send_message` ve `send_draft` her seferinde bir onay penceresi gösterir: gönderen, alıcılar, Cc, Bcc, konu, ekler ve metnin tamamı. Sadece onayladığın posta gider. Uygulaman bu pencereyi gösteremiyorsa posta gönderilmez. O zaman taslak oluşturup kendi posta uygulamandan gönderebilirsin.
+Açtıktan sonra bile `posta_gonder` ve `taslagi_gonder` her seferinde bir onay penceresi gösterir: gönderen, alıcılar, Cc, Bcc, konu, ekler ve metnin tamamı. Sadece onayladığın posta gider. Uygulaman bu pencereyi gösteremiyorsa posta gönderilmez. O zaman taslak oluşturup kendi posta uygulamandan gönderebilirsin.
 
 Dikkat: onayları otomatik kabul eden bir "hook" ayarlama. Bu, onay korumasını boşa çıkarır.
 

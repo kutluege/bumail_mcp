@@ -52,7 +52,7 @@ async def test_read_only_tools_have_no_mark_seen_parameter():
     async with Client(build_server(CONFIG, mailbox=FakeMailbox(raw_message()))) as c:
         tools = (await c.list_tools()).tools
     read_only = [t for t in tools if t.annotations and t.annotations.read_only_hint]
-    assert {"get_message", "search_messages", "get_attachment_text"} <= {t.name for t in read_only}
+    assert {"postayi_oku", "postalari_ara", "eki_oku"} <= {t.name for t in read_only}
     for tool in read_only:
         assert "mark_seen" not in tool.input_schema.get("properties", {}), tool.name
 
@@ -61,7 +61,7 @@ async def test_read_only_tools_have_no_mark_seen_parameter():
 async def test_get_message_never_asks_the_mailbox_to_mark_seen():
     mb = FakeMailbox(raw_message("Merhaba"))
     async with Client(build_server(CONFIG, mailbox=mb)) as c:
-        r = await c.call_tool("get_message", {"folder": "INBOX", "uid": 4, "mark_seen": True})
+        r = await c.call_tool("postayi_oku", {"folder": "INBOX", "uid": 4, "mark_seen": True})
     assert not r.is_error and "Merhaba" in r.content[0].text
     assert mb.fetches == [(4, False)]
 
@@ -76,6 +76,6 @@ async def test_attachment_error_does_not_echo_the_sender_controlled_content_type
         b'Content-Disposition: attachment; filename="a.bin"\r\n\r\nxx\r\n--B--\r\n'
     )
     async with Client(build_server(CONFIG, mailbox=FakeMailbox(raw))) as c:
-        r = await c.call_tool("get_attachment_text", {"folder": "INBOX", "uid": 1, "index": 0})
+        r = await c.call_tool("eki_oku", {"folder": "INBOX", "uid": 1, "index": 0})
     assert r.is_error
     assert "IGNORE" not in r.content[0].text and "not a text-like file" in r.content[0].text

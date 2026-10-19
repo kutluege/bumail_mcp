@@ -79,7 +79,7 @@ def cmd_serve(_: argparse.Namespace) -> int:
     from posta_mcp.server import run, run_setup_required
 
     # Unusable settings do not stop the server: it starts in a minimal "kurulum gerekli" mode
-    # (no mailbox access) whose server_info explains the fix, instead of a bare "failed".
+    # (no mailbox access) whose sunucu_bilgisi explains the fix, instead of a bare "failed".
     try:
         config = load_config()
     except ConfigError as exc:

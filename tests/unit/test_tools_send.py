@@ -176,10 +176,10 @@ def assert_nothing_sent(mailbox=None):
 async def test_disabled_refuses_and_never_touches_smtp_or_asks(mode):
     mb, asker = FakeMailbox(), Asker()
     async with client_for(make_config(enabled=False), mb, mode, asker) as c:
-        r = await c.call_tool("send_message", ARGS)
+        r = await c.call_tool("posta_gonder", ARGS)
     assert r.is_error
     t = text(r)
-    assert "disabled" in t and "POSTA_ALLOW_SEND" in t and "create_draft" in t
+    assert "disabled" in t and "POSTA_ALLOW_SEND" in t and "taslak_olustur" in t
     assert asker.messages == []  # not even asked
     assert_nothing_sent(mb)
 
@@ -189,7 +189,7 @@ async def test_disabled_refuses_and_never_touches_smtp_or_asks(mode):
 async def test_disabled_send_draft_refuses(mode):
     mb, asker = FakeMailbox(), Asker()
     async with client_for(make_config(enabled=False), mb, mode, asker) as c:
-        r = await c.call_tool("send_draft", {"uid": 1})
+        r = await c.call_tool("taslagi_gonder", {"uid": 1})
     assert r.is_error and "disabled" in text(r)
     assert asker.messages == []
     assert_nothing_sent(mb)
@@ -200,7 +200,7 @@ async def test_disabled_send_draft_refuses(mode):
 async def test_enabled_but_client_cannot_elicit_refuses(mode):
     mb = FakeMailbox()
     async with client_for(make_config(), mb, mode, None) as c:
-        r = await c.call_tool("send_message", ARGS)
+        r = await c.call_tool("posta_gonder", ARGS)
     assert r.is_error and "draft" in text(r).lower() and "NOT sent" in text(r)
     assert_nothing_sent(mb)
 
@@ -210,7 +210,7 @@ async def test_enabled_but_client_cannot_elicit_refuses(mode):
 async def test_send_draft_without_elicitation_refuses(mode):
     mb = FakeMailbox(drafts={1: compose.message_bytes(_draft_msg())})
     async with client_for(make_config(), mb, mode, None) as c:
-        r = await c.call_tool("send_draft", {"uid": 1})
+        r = await c.call_tool("taslagi_gonder", {"uid": 1})
     assert r.is_error and "draft" in text(r).lower()
     assert_nothing_sent(mb)
 
@@ -227,7 +227,7 @@ async def test_send_draft_without_elicitation_refuses(mode):
 async def test_not_confirmed_sends_nothing(mode, action, confirm, word):
     mb, asker = FakeMailbox(), Asker(action, confirm)
     async with client_for(make_config(), mb, mode, asker) as c:
-        r = await c.call_tool("send_message", ARGS)
+        r = await c.call_tool("posta_gonder", ARGS)
     assert not r.is_error
     assert r.structured_content["status"] == "not_sent"
     assert "NOT SENT" in text(r) and word in text(r)
@@ -241,7 +241,7 @@ async def test_not_confirmed_sends_nothing(mode, action, confirm, word):
 async def test_draft_not_confirmed_sends_nothing_and_keeps_draft(mode, action, confirm):
     mb = FakeMailbox(drafts={7: compose.message_bytes(_draft_msg())})
     async with client_for(make_config(), mb, mode, Asker(action, confirm)) as c:
-        r = await c.call_tool("send_draft", {"uid": 7})
+        r = await c.call_tool("taslagi_gonder", {"uid": 7})
     assert r.structured_content["status"] == "not_sent"
     assert_nothing_sent(mb)
 
@@ -254,7 +254,7 @@ async def test_draft_not_confirmed_sends_nothing_and_keeps_draft(mode, action, c
 async def test_accept_sends_once_and_bytes_match_the_shown_fingerprint(mode):
     mb, asker = FakeMailbox(), Asker()
     async with client_for(make_config(), mb, mode, asker) as c:
-        r = await c.call_tool("send_message", ARGS)
+        r = await c.call_tool("posta_gonder", ARGS)
     assert not r.is_error and r.structured_content["status"] == "sent"
     assert len(FakeSMTP.sent) == 1 and len(asker.messages) == 1
     sent = FakeSMTP.sent[0]
@@ -284,7 +284,7 @@ async def test_accept_sends_once_and_bytes_match_the_shown_fingerprint(mode):
 async def test_confirmation_shows_recipients_subject_and_full_body(mode):
     asker = Asker("decline")
     async with client_for(make_config(), FakeMailbox(), mode, asker) as c:
-        await c.call_tool("send_message", ARGS)
+        await c.call_tool("posta_gonder", ARGS)
     shown = asker.messages[0]
     for needle in (
         ME,
@@ -306,7 +306,7 @@ async def test_long_body_is_truncated_in_the_dialog_with_length_but_sent_in_full
     body = "x" * 9000 + "SONUN-SONU"
     asker = Asker()
     async with client_for(make_config(), FakeMailbox(), mode, asker) as c:
-        await c.call_tool("send_message", {**ARGS, "body": body})
+        await c.call_tool("posta_gonder", {**ARGS, "body": body})
     shown = asker.messages[0]
     assert "x" * 4000 in shown and "x" * 4001 not in shown
     assert "SONUN-SONU" not in shown and "of 9011 characters" in shown
@@ -320,7 +320,7 @@ async def test_long_body_is_truncated_in_the_dialog_with_length_but_sent_in_full
 async def test_sent_copy_is_appended_seen_and_includes_bcc(mode):
     mb = FakeMailbox()
     async with client_for(make_config(save_sent="auto"), mb, mode, Asker()) as c:
-        r = await c.call_tool("send_message", ARGS)
+        r = await c.call_tool("posta_gonder", ARGS)
     assert r.structured_content["saved_to_sent"] is True
     folder, raw, flags = mb.appended[0]
     assert folder == "Sent" and flags == (r"\Seen",)
@@ -332,7 +332,7 @@ async def test_sent_copy_is_appended_seen_and_includes_bcc(mode):
 async def test_save_sent_never_skips_the_copy(mode):
     mb = FakeMailbox()
     async with client_for(make_config(save_sent="never"), mb, mode, Asker()) as c:
-        r = await c.call_tool("send_message", ARGS)
+        r = await c.call_tool("posta_gonder", ARGS)
     assert r.structured_content["status"] == "sent" and mb.appended == []
 
 
@@ -342,7 +342,7 @@ async def test_failing_sent_copy_is_a_warning_not_a_failure(mode):
     mb = FakeMailbox()
     mb.fail_append = True
     async with client_for(make_config(), mb, mode, Asker()) as c:
-        r = await c.call_tool("send_message", ARGS)
+        r = await c.call_tool("posta_gonder", ARGS)
     assert not r.is_error and r.structured_content["status"] == "sent"
     assert len(FakeSMTP.sent) == 1
     assert any("Sent" in w for w in r.structured_content["warnings"])
@@ -366,7 +366,7 @@ async def test_extra_arguments_cannot_bypass_confirmation(mode, extra):
     mb, asker = FakeMailbox(), Asker("decline")
     async with client_for(make_config(), mb, mode, asker) as c:
         try:
-            r = await c.call_tool("send_message", {**ARGS, **extra})
+            r = await c.call_tool("posta_gonder", {**ARGS, **extra})
         except Exception:  # noqa: BLE001 - rejecting the call outright is fine too
             r = None
     assert r is None or r.is_error or r.structured_content["status"] == "not_sent"
@@ -378,7 +378,7 @@ async def test_extra_arguments_cannot_bypass_confirmation(mode, extra):
 async def test_extra_arguments_do_not_bypass_when_client_cannot_elicit(mode):
     async with client_for(make_config(), FakeMailbox(), mode, None) as c:
         try:
-            r = await c.call_tool("send_message", {**ARGS, "confirm": True})
+            r = await c.call_tool("posta_gonder", {**ARGS, "confirm": True})
         except Exception:  # noqa: BLE001
             r = None
     assert r is None or r.is_error
@@ -390,7 +390,7 @@ async def test_extra_arguments_do_not_bypass_when_client_cannot_elicit(mode):
 async def test_input_schema_does_not_expose_decision_or_a_way_to_enable_sending(mode):
     async with client_for(make_config(), FakeMailbox(), mode, Asker()) as c:
         tools = {t.name: t for t in (await c.list_tools()).tools}
-    for name in ("send_message", "send_draft"):
+    for name in ("posta_gonder", "taslagi_gonder"):
         props = tools[name].input_schema["properties"]
         assert "decision" not in props and "confirm" not in props
         assert tools[name].annotations.open_world_hint is True
@@ -402,7 +402,7 @@ async def test_input_schema_does_not_expose_decision_or_a_way_to_enable_sending(
 async def test_invalid_recipient_is_refused_before_asking(mode):
     asker = Asker()
     async with client_for(make_config(), FakeMailbox(), mode, asker) as c:
-        r = await c.call_tool("send_message", {**ARGS, "to": ["not an address"]})
+        r = await c.call_tool("posta_gonder", {**ARGS, "to": ["not an address"]})
     assert r.is_error and asker.messages == []
     assert_nothing_sent()
 
@@ -412,7 +412,7 @@ async def test_invalid_recipient_is_refused_before_asking(mode):
 async def test_header_injection_in_subject_is_refused(mode):
     asker = Asker()
     async with client_for(make_config(), FakeMailbox(), mode, asker) as c:
-        r = await c.call_tool("send_message", {**ARGS, "subject": "hi\r\nBcc: evil@example.org"})
+        r = await c.call_tool("posta_gonder", {**ARGS, "subject": "hi\r\nBcc: evil@example.org"})
     assert r.is_error and asker.messages == []
     assert_nothing_sent()
 
@@ -442,7 +442,7 @@ async def test_message_mutated_after_it_was_shown_is_not_sent(mode, monkeypatch)
             return await super().__call__(ctx, params)
 
     async with client_for(make_config(), FakeMailbox(), mode, Tamper()) as c:
-        r = await c.call_tool("send_message", ARGS)
+        r = await c.call_tool("posta_gonder", ARGS)
     assert r.is_error and "changed" in text(r)
     assert_nothing_sent()
 
@@ -451,8 +451,8 @@ async def test_message_mutated_after_it_was_shown_is_not_sent(mode, monkeypatch)
 @pytest.mark.parametrize("mode", MODES)
 async def test_each_confirmation_sends_exactly_once(mode):
     async with client_for(make_config(), FakeMailbox(), mode, Asker()) as c:
-        await c.call_tool("send_message", ARGS)
-        await c.call_tool("send_message", ARGS)  # a second call needs its own confirmation
+        await c.call_tool("posta_gonder", ARGS)
+        await c.call_tool("posta_gonder", ARGS)  # a second call needs its own confirmation
     assert len(FakeSMTP.sent) == 2
     assert FakeSMTP.sent[0]["data"] != FakeSMTP.sent[1]["data"]  # fresh Message-ID each time
 
@@ -483,7 +483,7 @@ async def test_reply_threads_and_defaults_recipient_and_subject(mode):
     asker = Asker()
     args = {"to": [], "subject": "", "body": "Teşekkürler hocam.", "reply_to_folder": "INBOX"}
     async with client_for(make_config(), mb, mode, asker) as c:
-        r = await c.call_tool("send_message", {**args, "reply_to_uid": 5})
+        r = await c.call_tool("posta_gonder", {**args, "reply_to_uid": 5})
     assert r.structured_content["status"] == "sent"
     sent = FakeSMTP.sent[0]
     assert sent["recipients"] == ["hoca@example.org"]
@@ -497,12 +497,12 @@ async def test_reply_threads_and_defaults_recipient_and_subject(mode):
 @pytest.mark.parametrize("mode", MODES)
 async def test_reply_folder_without_uid_is_refused(mode):
     async with client_for(make_config(), FakeMailbox(), mode, Asker()) as c:
-        r = await c.call_tool("send_message", {**ARGS, "reply_to_folder": "INBOX"})
+        r = await c.call_tool("posta_gonder", {**ARGS, "reply_to_folder": "INBOX"})
     assert r.is_error
     assert_nothing_sent()
 
 
-# --- send_draft --------------------------------------------------------------------------------
+# --- taslagi_gonder --------------------------------------------------------------------------------
 
 
 def _draft_msg(**kw):
@@ -521,7 +521,7 @@ async def test_send_draft_end_to_end_moves_draft_to_trash_and_hides_bcc(mode):
     mb = FakeMailbox(drafts={7: compose.message_bytes(_draft_msg())})
     asker = Asker()
     async with client_for(make_config(), mb, mode, asker) as c:
-        r = await c.call_tool("send_draft", {"uid": 7})
+        r = await c.call_tool("taslagi_gonder", {"uid": 7})
     assert r.structured_content["status"] == "sent"
     assert r.structured_content["draft_moved_to_trash"] is True
     assert mb.moved == [("Drafts", [7], "Trash")]
@@ -544,7 +544,7 @@ async def test_send_draft_from_other_address_is_refused(mode):
     mb = FakeMailbox(drafts={7: compose.message_bytes(other)})
     asker = Asker()
     async with client_for(make_config(), mb, mode, asker) as c:
-        r = await c.call_tool("send_draft", {"uid": 7})
+        r = await c.call_tool("taslagi_gonder", {"uid": 7})
     assert r.is_error and asker.messages == []
     assert_nothing_sent(mb)
 
@@ -559,7 +559,7 @@ async def test_send_draft_shows_attachment_names(mode):
     mb = FakeMailbox(drafts={3: compose.message_bytes(msg)})
     asker = Asker("decline")
     async with client_for(make_config(), mb, mode, asker) as c:
-        await c.call_tool("send_draft", {"uid": 3})
+        await c.call_tool("taslagi_gonder", {"uid": 3})
     assert "rapor-çalışma.pdf" in asker.messages[0]
     assert_nothing_sent(mb)
 
@@ -573,7 +573,7 @@ async def test_failed_smtp_send_leaves_draft_and_sent_untouched(mode, monkeypatc
     monkeypatch.setattr(FakeSMTP, "sendmail", boom)
     mb = FakeMailbox(drafts={7: compose.message_bytes(_draft_msg())})
     async with client_for(make_config(), mb, mode, Asker()) as c:
-        r = await c.call_tool("send_draft", {"uid": 7})
+        r = await c.call_tool("taslagi_gonder", {"uid": 7})
     assert r.is_error and "nothing was sent" in text(r)
     assert PASSWORD not in text(r)
     assert mb.moved == [] and mb.appended == []
@@ -588,7 +588,7 @@ async def test_rejected_smtp_login_carries_the_turkish_hint(mode, monkeypatch):
     monkeypatch.setattr(FakeSMTP, "login", reject)
     mb = FakeMailbox(drafts={7: compose.message_bytes(_draft_msg())})
     async with client_for(make_config(), mb, mode, Asker()) as c:
-        r = await c.call_tool("send_draft", {"uid": 7})
+        r = await c.call_tool("taslagi_gonder", {"uid": 7})
     assert r.is_error and "Giriş başarısız" in text(r)
     assert "nothing was sent" in text(r) and PASSWORD not in text(r)
 
@@ -610,7 +610,7 @@ async def test_send_draft_shows_reply_to_and_names_of_other_headers(mode):
     mb = FakeMailbox(drafts={7: raw})
     asker = Asker("decline")
     async with client_for(make_config(), mb, mode, asker) as c:
-        await c.call_tool("send_draft", {"uid": 7})
+        await c.call_tool("taslagi_gonder", {"uid": 7})
     shown = asker.messages[0]
     assert "Reply-To: Baska <baska@example.net>" in shown
     assert "Other headers: X-Mailer, X-Track" in shown
@@ -622,7 +622,7 @@ async def test_send_draft_shows_reply_to_and_names_of_other_headers(mode):
 async def test_confirmation_omits_reply_to_and_other_headers_when_absent(mode):
     asker = Asker("decline")
     async with client_for(make_config(), FakeMailbox(), mode, asker) as c:
-        await c.call_tool("send_message", ARGS)
+        await c.call_tool("posta_gonder", ARGS)
     assert "Reply-To:" not in asker.messages[0] and "Other headers:" not in asker.messages[0]
 
 
@@ -642,7 +642,7 @@ async def test_send_draft_refuses_redirecting_headers(mode, headers):
     mb = FakeMailbox(drafts={7: _draft_with(**headers)})
     asker = Asker()
     async with client_for(make_config(), mb, mode, asker) as c:
-        r = await c.call_tool("send_draft", {"uid": 7})
+        r = await c.call_tool("taslagi_gonder", {"uid": 7})
     assert r.is_error and "Refusing to send" in text(r) and "nothing was sent" in text(r)
     assert asker.messages == []
     assert_nothing_sent(mb)
@@ -653,7 +653,7 @@ async def test_send_draft_refuses_redirecting_headers(mode, headers):
 async def test_send_draft_allows_sender_equal_to_the_account(mode):
     mb = FakeMailbox(drafts={7: _draft_with(Sender=f"Ben <{ME}>")})
     async with client_for(make_config(), mb, mode, Asker()) as c:
-        r = await c.call_tool("send_draft", {"uid": 7})
+        r = await c.call_tool("taslagi_gonder", {"uid": 7})
     assert not r.is_error and r.structured_content["status"] == "sent"
 
 
@@ -665,7 +665,7 @@ async def test_invisible_characters_are_refused_not_silently_shown(mode, char, w
     args = {**ARGS, where: ARGS[where] + f"x{char}y"}
     asker = Asker()
     async with client_for(make_config(), FakeMailbox(), mode, asker) as c:
-        r = await c.call_tool("send_message", args)
+        r = await c.call_tool("posta_gonder", args)
     assert r.is_error and "invisible" in text(r) and asker.messages == []
     assert_nothing_sent()
 
@@ -677,7 +677,7 @@ async def test_invisible_character_in_a_draft_header_is_refused(mode):
     msg.replace_header("Subject", "Fatura‮txt.exe")
     mb = FakeMailbox(drafts={7: compose.message_bytes(msg)})
     async with client_for(make_config(), mb, mode, Asker()) as c:
-        r = await c.call_tool("send_draft", {"uid": 7})
+        r = await c.call_tool("taslagi_gonder", {"uid": 7})
     assert r.is_error and "invisible" in text(r)
     assert_nothing_sent(mb)
 
@@ -695,7 +695,7 @@ async def test_send_result_lists_only_plain_addresses_and_no_subject(mode):
         "reply_to_uid": 5,
     }
     async with client_for(make_config(), mb, mode, Asker()) as c:
-        r = await c.call_tool("send_message", args)
+        r = await c.call_tool("posta_gonder", args)
     result = r.structured_content
     assert result["recipients"] == ["hoca@example.org"]  # address only, no display name
     assert result["warnings"] and not any("Ödev teslimi" in w for w in result["warnings"])
@@ -742,7 +742,7 @@ async def test_attachment_is_shown_with_its_path_and_sent(mode, tmp_path):
     photo.write_bytes(b"\xff\xd8\xff fake jpeg")
     asker = Asker()
     async with client_for(make_config(), FakeMailbox(), mode, asker) as c:
-        r = await c.call_tool("send_message", {**ARGS, "attachments": [str(photo)]})
+        r = await c.call_tool("posta_gonder", {**ARGS, "attachments": [str(photo)]})
     assert r.structured_content["status"] == "sent"
     shown = asker.messages[0]
     assert "çiçek.jpg [image/jpeg, 13 bytes]" in shown
@@ -768,7 +768,7 @@ async def test_attachment_changed_after_confirmation_is_sent_as_shown(mode, tmp_
 
     asker = Editor()
     async with client_for(make_config(), FakeMailbox(), mode, asker) as c:
-        await c.call_tool("send_message", {**ARGS, "attachments": [str(note)]})
+        await c.call_tool("posta_gonder", {**ARGS, "attachments": [str(note)]})
     assert b"sonradan" not in FakeSMTP.sent[0]["data"]
     assert len(asker.messages) == 1
 
@@ -783,7 +783,7 @@ async def test_hidden_or_missing_attachment_is_refused_before_asking(mode, tmp_p
     for path, word in ((secret, "hidden"), (tmp_path / "yok.pdf", "not found")):
         asker = Asker()
         async with client_for(make_config(), FakeMailbox(), mode, asker) as c:
-            r = await c.call_tool("send_message", {**ARGS, "attachments": [str(path)]})
+            r = await c.call_tool("posta_gonder", {**ARGS, "attachments": [str(path)]})
         assert r.is_error and word in text(r) and "PRIVATE KEY" not in text(r)
         assert asker.messages == []
     assert_nothing_sent()
@@ -798,7 +798,7 @@ async def test_create_draft_with_attachment(mode, tmp_path):
     mb = FakeMailbox()
     async with client_for(make_config(enabled=False), mb, mode, None) as c:
         r = await c.call_tool(
-            "create_draft",
+            "taslak_olustur",
             {
                 "to": ["a@example.org"],
                 "subject": "Rapor",
@@ -807,7 +807,7 @@ async def test_create_draft_with_attachment(mode, tmp_path):
             },
         )
         bad = await c.call_tool(
-            "create_draft",
+            "taslak_olustur",
             {"to": ["a@example.org"], "subject": "x", "body": "x", "attachments": ["rapor.pdf"]},
         )
     assert not r.is_error and "NOT been sent" in text(r)

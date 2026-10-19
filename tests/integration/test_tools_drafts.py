@@ -26,7 +26,7 @@ def drafts_of(imap_client, user, folder="Drafts"):
 def test_create_draft_lands_in_drafts_with_flags(tool, greenmail, imap_client):
     assert not imap_client(greenmail.student).folder_exists("Drafts")
     out = tool(
-        "create_draft",
+        "taslak_olustur",
         to=["Hoca Örnek <hoca@bogazici.test>"],
         subject="Ödev teslimi hakkında",
         body="Sayın hocam,\n\nÖdevi yarın teslim edebilir miyim? Teşekkürler.\n",
@@ -54,7 +54,7 @@ def test_create_draft_rejects_bad_input(tool, greenmail, imap_client):
         {"to": ["a@example.test"], "subject": "x\r\nBcc: evil@example.test", "body": "y"},
         {"to": [], "subject": "x", "body": "y"},
     ):
-        out = tool("create_draft", **args)
+        out = tool("taslak_olustur", **args)
         assert out.is_error, args
     assert drafts_of(imap_client, greenmail.student) == []
 
@@ -64,7 +64,7 @@ def test_create_reply_draft_threads_and_leaves_original_unread(
 ):
     uid = seed_message(greenmail.student, eml("from_faculty.eml"))
     out = tool(
-        "create_reply_draft",
+        "yanit_taslagi_olustur",
         folder="INBOX",
         uid=uid,
         body="Teşekkürler hocam, not edildi.",
@@ -92,7 +92,7 @@ def test_create_reply_draft_threads_and_leaves_original_unread(
 
 def test_create_reply_draft_reply_all(tool, seed_message, greenmail, imap_client):
     uid = seed_message(greenmail.student, eml("from_student.eml"))
-    out = tool("create_reply_draft", folder="INBOX", uid=uid, body="Tamam.", reply_all=True)
+    out = tool("yanit_taslagi_olustur", folder="INBOX", uid=uid, body="Tamam.", reply_all=True)
     assert not out.is_error, out.text
     [(_u, _f, msg)] = drafts_of(imap_client, greenmail.student)
     assert "ogrenci.test@std.bogazici.edu.tr" in str(msg["To"])
@@ -101,6 +101,6 @@ def test_create_reply_draft_reply_all(tool, seed_message, greenmail, imap_client
 
 
 def test_create_reply_draft_missing_message(tool, greenmail, imap_client):
-    out = tool("create_reply_draft", folder="INBOX", uid=424242, body="x")
+    out = tool("yanit_taslagi_olustur", folder="INBOX", uid=424242, body="x")
     assert out.is_error and "No message with uid" in out.text
     assert drafts_of(imap_client, greenmail.student) == []

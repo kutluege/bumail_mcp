@@ -157,18 +157,18 @@ Special folders are found through IMAP SPECIAL-USE first, then the preset's fold
 
 | Group | Tools |
 |---|---|
-| Info and read (read-only) | `server_info`, `list_folders`, `search_messages`, `get_message`, `get_attachment_text` |
-| Organize | `mark_messages`, `move_messages`, `trash_messages`, `archive_messages` |
-| Drafts (saved to Drafts, never sent) | `create_draft`, `create_reply_draft` |
-| Send (disabled by default, confirmation required) | `send_message`, `send_draft` |
+| Info and read (read-only) | `sunucu_bilgisi`, `klasorleri_listele`, `postalari_ara`, `postayi_oku`, `eki_oku` |
+| Organize | `postalari_isaretle`, `postalari_tasi`, `cope_at`, `arsivle` |
+| Drafts (saved to Drafts, never sent) | `taslak_olustur`, `yanit_taslagi_olustur` |
+| Send (disabled by default, confirmation required) | `posta_gonder`, `taslagi_gonder` |
 | Boğaziçi summaries (read-only bundles) | `hoca_ozet`, `ogrenci_ozet`, `bana_ozet` |
-| Interest profile | `get_profile`, `update_profile` |
+| Interest profile | `profili_goster`, `profili_guncelle` |
 
 Defaults: 20 results per search (max 100), message text truncated at 20,000 characters with a
 notice. Summary tools never call a model; they select and package messages, and your client's
 model writes the summary.
 
-Attachments: `send_message`, `create_draft` and `create_reply_draft` take `attachments`, a list of
+Attachments: `posta_gonder`, `taslak_olustur` and `yanit_taslagi_olustur` take `attachments`, a list of
 absolute paths of files on your computer (at most 10 files, 18 MB in total). Hidden files and
 anything inside a hidden folder (`.ssh`, `.env`, Windows `AppData`, ...) are refused, and so are
 network paths (`\\server\share`). The send confirmation shows
@@ -200,7 +200,7 @@ fills this in automatically.
 **Everything above is UNVERIFIED.** Hosts, ports, security, the login-name rule, folder names,
 institutional/student domains and the mailing-list / automated-sender rules were taken from public
 IT documentation and DNS and have not been tested against the live server. `posta-mcp doctor` and
-`server_info` list the unverified fields. Part-time (`pt.`) and retired (`retired.`) accounts use
+`sunucu_bilgisi` list the unverified fields. Part-time (`pt.`) and retired (`retired.`) accounts use
 different hosts and currently need explicit `imap.host` / `smtp.host` settings. The university's
 2026 Exchange upgrade may have changed capabilities (MOVE, SPECIAL-USE). The maintainer-side
 checklist is in [docs/HANDOFF.md](HANDOFF.md) (`scripts/live_verify.py`).
@@ -218,7 +218,7 @@ Mail is sorted into categories using headers (List-Id, Auto-Submitted, ...) and 
   `kampüsünde`), and also gives a short subject-only list of the other recent school mail.
 
 Your interest profile is a small non-secret file, `profile.toml`, next to `config.toml` (copy
-`profile.example.toml` from the package, or ask the assistant to run `update_profile`):
+`profile.example.toml` from the package, or ask the assistant to run `profili_guncelle`):
 
 ```toml
 notes = "Mostly on Güney Kampüs; eat at the yemekhane most days; play tennis."
@@ -242,7 +242,7 @@ wrong. Check deadlines and announcements in the original mail.
 ## Enabling sending
 
 Off by default. To allow it, set `POSTA_ALLOW_SEND=true` in the client's environment or
-`[sending] enabled = true` in `config.toml`. Even then, `send_message` and `send_draft` ask you to
+`[sending] enabled = true` in `config.toml`. Even then, `posta_gonder` and `taslagi_gonder` ask you to
 confirm each message in the client (From, To, Cc, Bcc, subject, attachments, full body), and
 send exactly what was shown. If your client cannot show such a confirmation (Claude Desktop may not
 today), sending refuses and you can still create drafts and send them from your normal mail app.

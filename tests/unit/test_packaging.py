@@ -162,9 +162,9 @@ def test_manifest_baslangic_prompt():
     assert not prompt.get("arguments")
     text = prompt["text"]
     for needle in (
-        "server_info",
-        "list_folders",
-        "get_profile",
+        "sunucu_bilgisi",
+        "klasorleri_listele",
+        "profili_goster",
         "hoca-ozet",
         "ogrenci-ozet",
         "bana-ozet",

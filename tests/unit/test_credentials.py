@@ -114,7 +114,7 @@ def _call_server_info(config):
     server = build_server(config)
 
     async def go():
-        result = await server.call_tool("server_info", {})
+        result = await server.call_tool("sunucu_bilgisi", {})
         return result
 
     result = anyio.run(go)

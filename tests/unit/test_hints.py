@@ -206,7 +206,7 @@ async def test_list_folders_error_through_the_server_carries_the_hint():
         raise MailboxError("IMAP login failed: the server rejected the credentials.", kind="auth")
 
     async with Client(build_server(CONFIG, mailbox=mailbox)) as c:
-        result = await c.call_tool("list_folders", {})
+        result = await c.call_tool("klasorleri_listele", {})
     text = result.content[0].text
     assert result.is_error
     assert "Giriş başarısız" in text and "mail.bogazici.edu.tr/password" in text
@@ -289,10 +289,10 @@ async def test_setup_server_offers_only_server_info_and_baslangic():
     async with Client(build_setup_server(problem)) as c:
         tools = {t.name for t in (await c.list_tools()).tools}
         prompts = {p.name for p in (await c.list_prompts()).prompts}
-        info = await c.call_tool("server_info", {})
+        info = await c.call_tool("sunucu_bilgisi", {})
         intro = await c.get_prompt("baslangic", {})
-        missing = await c.call_tool("list_folders", {})
-    assert tools == {"server_info"} and prompts == {"baslangic"}
+        missing = await c.call_tool("klasorleri_listele", {})
+    assert tools == {"sunucu_bilgisi"} and prompts == {"baslangic"}
     data = info.structured_content
     assert data["setup_required"] is True and data["problem"] == problem
     assert "uvx posta-mcp setup" in data["what_to_do"]

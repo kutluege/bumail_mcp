@@ -1,4 +1,4 @@
-"""Organize tools: mark_messages, move_messages, trash_messages, archive_messages.
+"""Organize tools: postalari_isaretle, postalari_tasi, cope_at, arsivle.
 
 Nothing here can permanently delete mail: "trash" is a move to the Trash folder, and moves never
 issue a plain EXPUNGE (see posta_mcp.imap.Mailbox.move).
@@ -31,7 +31,7 @@ def _count(n: int) -> str:
 
 
 def register(server: MCPServer, deps: Deps) -> None:
-    @server.tool(annotations=WRITE)
+    @server.tool(name="postalari_isaretle", annotations=WRITE)
     def mark_messages(
         folder: str, uids: list[int], seen: bool | None = None, flagged: bool | None = None
     ) -> str:
@@ -47,14 +47,14 @@ def register(server: MCPServer, deps: Deps) -> None:
         changes = [f"{n}={v}" for n, v in (("seen", seen), ("flagged", flagged)) if v is not None]
         return f"Updated {_count(len(ids))} in {folder}: {', '.join(changes)}."
 
-    @server.tool(annotations=WRITE)
+    @server.tool(name="postalari_tasi", annotations=WRITE)
     def move_messages(folder: str, uids: list[int], destination: str) -> str:
         """Move messages (by UID) to another existing folder."""
         ids = check_uids(uids)
         with_mailbox(deps, "Moving messages", lambda mb: mb.move(folder, ids, destination))
         return f"Moved {_count(len(ids))} from {folder} to {destination}."
 
-    @server.tool(annotations=WRITE)
+    @server.tool(name="cope_at", annotations=WRITE)
     def trash_messages(folder: str, uids: list[int]) -> str:
         """Move messages to the Trash folder (recoverable; nothing is permanently deleted)."""
         ids = check_uids(uids)
@@ -69,7 +69,7 @@ def register(server: MCPServer, deps: Deps) -> None:
         trash = with_mailbox(deps, "Trashing messages", run)
         return f"Moved {_count(len(ids))} from {folder} to {trash}."
 
-    @server.tool(annotations=WRITE)
+    @server.tool(name="arsivle", annotations=WRITE)
     def archive_messages(folder: str, uids: list[int]) -> str:
         """Move messages to the Archive folder."""
         ids = check_uids(uids)

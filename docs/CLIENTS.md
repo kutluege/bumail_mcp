@@ -29,8 +29,8 @@ claude mcp add --scope user posta -- uv run --directory /path/to/posta-mcp posta
 - **Prompts become slash commands.** `/posta:hoca-ozet 7`, `/posta:ogrenci-ozet 7`,
   `/posta:bana-ozet 3`, and `/posta:baslangic` for a first-run check (also written `/mcp__posta__hoca-ozet 7`). Arguments are positional,
   space-separated: `days`, then optional `language`.
-- **Elicitation works** in Claude Code (v2.1.76 and later). With sending enabled, `send_message` and
-  `send_draft` show a confirmation dialog with the full message. Do not install an `Elicitation` hook
+- **Elicitation works** in Claude Code (v2.1.76 and later). With sending enabled, `posta_gonder` and
+  `taslagi_gonder` show a confirmation dialog with the full message. Do not install an `Elicitation` hook
   that auto-accepts; the server cannot tell and it would defeat the confirmation.
 - Check the connection with `/mcp`, or `claude mcp list`.
 - The newer Claude Code runtime speaks the 2026-07-28 MCP protocol; posta-mcp supports both eras. To
@@ -54,11 +54,11 @@ Notes and caveats:
   dependencies itself. It has not been confirmed that Desktop ships its own `uv`; if the extension
   fails to start, install [uv](https://docs.astral.sh/uv/) and restart Desktop.
 - **Elicitation support in Claude Desktop is unconfirmed** (reports conflict). If Desktop cannot show
-  the confirmation, `send_message` and `send_draft` **refuse** and tell you to use a draft. Reading,
+  the confirmation, `posta_gonder` and `taslagi_gonder` **refuse** and tell you to use a draft. Reading,
   searching, organizing and drafting still work. Treat sending as unavailable on Desktop.
 - Prompts (`hoca-ozet`, ...) should be offered by Desktop's attachment menu; this is not verified. If
   you do not see them, ask for the tool in plain words ("run hoca_ozet for the last 7 days").
-- If the email or password is missing or wrong, the server still starts: `server_info` and the
+- If the email or password is missing or wrong, the server still starts: `sunucu_bilgisi` and the
   `baslangic` prompt explain in Turkish what to fix in the extension settings.
 - Manual alternative without the bundle: add a server to `claude_desktop_config.json` with
   `"command": "uvx"`, `"args": ["posta-mcp", "serve"]` and an `env` block.
@@ -105,16 +105,16 @@ Non-interactive CLI mode (what the smoke test used). Mode flags (`--cli`) must c
 
 ```
 npx -y @modelcontextprotocol/inspector --cli --config inspector.json --server posta --method tools/list
-npx -y @modelcontextprotocol/inspector --cli --config inspector.json --server posta --method tools/call --tool-name search_messages --tool-arg folder=INBOX limit=5
-npx -y @modelcontextprotocol/inspector --cli --config inspector.json --server posta --method tools/call --tool-name get_message --tool-arg folder=INBOX uid=1
-npx -y @modelcontextprotocol/inspector --cli --config inspector.json --server posta --method tools/call --tool-name create_draft --tool-arg 'to=["hoca@bogazici.test"]' subject=Merhaba "body=Merhaba hocam"
+npx -y @modelcontextprotocol/inspector --cli --config inspector.json --server posta --method tools/call --tool-name postalari_ara --tool-arg folder=INBOX limit=5
+npx -y @modelcontextprotocol/inspector --cli --config inspector.json --server posta --method tools/call --tool-name postayi_oku --tool-arg folder=INBOX uid=1
+npx -y @modelcontextprotocol/inspector --cli --config inspector.json --server posta --method tools/call --tool-name taslak_olustur --tool-arg 'to=["hoca@bogazici.test"]' subject=Merhaba "body=Merhaba hocam"
 ```
 
 List-valued arguments are passed as JSON. Add `--method prompts/list` or `prompts/get --prompt-name
 hoca-ozet --prompt-args days=7` once the summary prompts are installed.
 
 `--protocol-era legacy|auto|modern` selects which MCP protocol revision the Inspector negotiates (default
-`legacy`). The server works in all three (checked with `server_info` over `auto` and `modern`); the send
+`legacy`). The server works in all three (checked with `sunucu_bilgisi` over `auto` and `modern`); the send
 confirmation uses the pattern that works on both eras, so test sending in more than one.
 
 Quirk: on Windows with Inspector 2.10.1 the inline form (`... --cli -e KEY=VALUE uv run posta-mcp serve
@@ -132,9 +132,9 @@ uv run python scripts/greenmail.py start --instance m5      # prints the IMAPS/S
 uv run python scripts/greenmail.py stop --instance m5
 ```
 
-Results: `tools/list` returned all tools registered by the installed tool modules; `search_messages`
+Results: `tools/list` returned all tools registered by the installed tool modules; `postalari_ara`
 listed the three seeded Turkish messages with correct decoding (windows-1254, QP/UTF-8 and `Ynt:`
-subjects); `get_message` returned the body wrapped in an `untrusted-email` block; `create_draft`
+subjects); `postayi_oku` returned the body wrapped in an `untrusted-email` block; `taslak_olustur`
 saved a draft in Drafts and reported "NOT been sent"; afterwards the seeded messages still had no
 `\Seen` flag.
 

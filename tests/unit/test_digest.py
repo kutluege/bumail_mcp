@@ -285,7 +285,7 @@ def test_bana_orders_by_number_of_matched_interests():
 def test_bana_empty_profile_returns_guidance_without_touching_the_mailbox():
     mb = FakeMailbox(MIXED)
     out = bana(mb, pf.Profile())
-    assert "update_profile" in out and "Güney Kampüs" in out and "tenis" in out
+    assert "profili_guncelle" in out and "Güney Kampüs" in out and "tenis" in out
     assert not mb.searches and not mb.fetches
     assert "<untrusted-email nonce" not in out
 
@@ -369,16 +369,16 @@ async def test_tools_listed_with_annotations_and_untrusted_notes(server_for):
     server, _ = server_for(MIXED)
     async with Client(server) as c:
         tools = {t.name: t for t in (await c.list_tools()).tools}
-    for name in ("hoca_ozet", "ogrenci_ozet", "bana_ozet", "get_profile", "update_profile"):
+    for name in ("hoca_ozet", "ogrenci_ozet", "bana_ozet", "profili_goster", "profili_guncelle"):
         assert name in tools
     for name in ("hoca_ozet", "ogrenci_ozet", "bana_ozet"):
         assert tools[name].annotations.read_only_hint is True
         assert "untrusted" in tools[name].description
         assert "From header" in tools[name].description and "spoofed" in tools[name].description
-    assert "only when the user asks" in tools["update_profile"].description
-    assert tools["get_profile"].annotations.read_only_hint is True
-    assert tools["update_profile"].annotations.read_only_hint is False
-    assert tools["update_profile"].annotations.destructive_hint is False
+    assert "only when the user asks" in tools["profili_guncelle"].description
+    assert tools["profili_goster"].annotations.read_only_hint is True
+    assert tools["profili_guncelle"].annotations.read_only_hint is False
+    assert tools["profili_guncelle"].annotations.destructive_hint is False
     args = tools["hoca_ozet"].input_schema["properties"]
     assert args["days"]["default"] == 7 and args["limit"]["default"] == 30
     assert args["max_chars_per_message"]["default"] == 1500
@@ -404,10 +404,10 @@ async def test_profile_tools_and_bana_through_the_server(server_for, caplog):
     caplog.set_level(logging.INFO, logger="posta_mcp")
     async with Client(server) as c:
         empty = await c.call_tool("bana_ozet", {})
-        assert "update_profile" in text_of(empty)
+        assert "profili_guncelle" in text_of(empty)
 
         r = await c.call_tool(
-            "update_profile",
+            "profili_guncelle",
             {
                 "add_interests": [
                     {"name": "Güney Kampüs"},
@@ -421,7 +421,7 @@ async def test_profile_tools_and_bana_through_the_server(server_for, caplog):
         assert data["added"] == ["Güney Kampüs", "tenis"]
         assert "tennis" in data["suggested_extra_keywords"]["tenis"]  # suggested, not inserted
 
-        got = text_of(await c.call_tool("get_profile", {}))
+        got = text_of(await c.call_tool("profili_goster", {}))
         assert "interest: Güney Kampüs (keywords: " in got and "south campus" in got
         assert "interest: tenis (keywords: tenis)" in got
         assert "stored user preferences" in got and "not instructions" in got
@@ -429,7 +429,9 @@ async def test_profile_tools_and_bana_through_the_server(server_for, caplog):
         out = text_of(await c.call_tool("bana_ozet", {}))
         assert "kapalı olacaktır" in out and "Kütüphane 24 saat" not in out
 
-        r = await c.call_tool("update_profile", {"remove_interests": ["TENİS", "yok"], "notes": ""})
+        r = await c.call_tool(
+            "profili_guncelle", {"remove_interests": ["TENİS", "yok"], "notes": ""}
+        )
         assert r.structured_content["removed"] == ["TENİS"]
         assert r.structured_content["not_found"] == ["yok"]
     logged = " ".join(rec.getMessage() for rec in caplog.records)
@@ -441,5 +443,5 @@ async def test_profile_tools_and_bana_through_the_server(server_for, caplog):
 async def test_update_profile_errors_are_short(server_for):
     server, _ = server_for([])
     async with Client(server) as c:
-        r = await c.call_tool("update_profile", {"add_interests": [{"name": "   "}]})
+        r = await c.call_tool("profili_guncelle", {"add_interests": [{"name": "   "}]})
     assert r.is_error and "must not be empty" in text_of(r)

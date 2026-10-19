@@ -1,7 +1,7 @@
 """Non-negotiables #1, #2, #7 end to end: the real server process reads real mail over IMAP.
 
 Spawns ``python -m posta_mcp`` against GreenMail with ``POSTA_LOG_LEVEL=DEBUG`` and calls
-``search_messages`` and ``get_message``.  stdout must carry JSON-RPC only; stderr (where the
+``postalari_ara`` and ``postayi_oku``.  stdout must carry JSON-RPC only; stderr (where the
 debug log goes) must contain neither the mail's subject or body nor the password.
 """
 
@@ -93,9 +93,9 @@ def test_imap_tools_over_stdio_keep_stdout_clean_and_stderr_free_of_mail(
         response(1)
         send(_rpc(None, "notifications/initialized"))
 
-        found = call(2, "search_messages", {"folder": "INBOX"})
+        found = call(2, "postalari_ara", {"folder": "INBOX"})
         assert SUBJECT in found and f"uid={uid}" in found  # the tool does return the mail...
-        read = call(3, "get_message", {"folder": "INBOX", "uid": uid})
+        read = call(3, "postayi_oku", {"folder": "INBOX", "uid": uid})
         assert BODY in read and "<untrusted-email" in read
     finally:
         proc.stdin.close()

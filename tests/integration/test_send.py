@@ -123,7 +123,7 @@ async def test_send_message_tool_end_to_end(mode, greenmail, config_for, imap_cl
     asker = Asker()
     args = {"to": [greenmail.faculty], "cc": [], "bcc": [greenmail.outsider], **ARGS_TEMPLATE}
     async with Client(build_server(config), mode=mode, elicitation_callback=asker) as c:
-        result = await c.call_tool("send_message", args)
+        result = await c.call_tool("posta_gonder", args)
     # Without a working Mailbox the SMTP send still succeeds and the Sent copy is a warning.
     assert not result.is_error and result.structured_content["status"] == "sent"
     assert len(asker.messages) == 1 and greenmail.outsider in asker.messages[0]
@@ -143,7 +143,7 @@ async def test_declined_send_delivers_nothing(mode, greenmail, config_for, imap_
     config = config_for(POSTA_ALLOW_SEND="1")
     args = {"to": [greenmail.faculty], **ARGS_TEMPLATE}
     async with Client(build_server(config), mode=mode, elicitation_callback=Asker("decline")) as c:
-        result = await c.call_tool("send_message", args)
+        result = await c.call_tool("posta_gonder", args)
     assert result.structured_content["status"] == "not_sent"
     time.sleep(1)
     _c, uids = _wait_for_mail(imap_client, greenmail.faculty, timeout=0.5)
@@ -159,7 +159,7 @@ async def test_sending_disabled_by_default_delivers_nothing(
     assert not config.send_enabled
     args = {"to": [greenmail.faculty], **ARGS_TEMPLATE}
     async with Client(build_server(config), mode=mode, elicitation_callback=Asker()) as c:
-        result = await c.call_tool("send_message", args)
+        result = await c.call_tool("posta_gonder", args)
     assert result.is_error
     _c, uids = _wait_for_mail(imap_client, greenmail.faculty, timeout=0.5)
     assert uids == []
@@ -243,7 +243,7 @@ async def test_sent_copy_is_appended_with_seen(mode, greenmail, mailbox_for, ima
     async with Client(
         build_server(config, mailbox=factory), mode=mode, elicitation_callback=Asker()
     ) as c:
-        result = await c.call_tool("send_message", args)
+        result = await c.call_tool("posta_gonder", args)
     assert result.structured_content["saved_to_sent"] is True, result.structured_content
     student.select_folder("Sent")
     (uid,) = student.search("ALL")
@@ -269,7 +269,7 @@ async def test_send_draft_end_to_end(mode, greenmail, mailbox_for, imap_client, 
     async with Client(
         build_server(config, mailbox=factory), mode=mode, elicitation_callback=asker
     ) as c:
-        result = await c.call_tool("send_draft", {"uid": uid})
+        result = await c.call_tool("taslagi_gonder", {"uid": uid})
     assert result.structured_content["status"] == "sent", result.content[0].text
     assert greenmail.outsider in asker.messages[0]
 

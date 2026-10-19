@@ -82,9 +82,9 @@ def test_stdout_is_only_jsonrpc_and_server_info_has_no_secret(tmp_path):
 
         send(_rpc(2, "tools/list"))
         tools = {t["name"]: t for t in response(2)["result"]["tools"]}
-        assert tools["server_info"]["annotations"]["readOnlyHint"] is True
+        assert tools["sunucu_bilgisi"]["annotations"]["readOnlyHint"] is True
 
-        send(_rpc(3, "tools/call", {"name": "server_info", "arguments": {}}))
+        send(_rpc(3, "tools/call", {"name": "sunucu_bilgisi", "arguments": {}}))
         info = response(3)
         text = json.dumps(info)
         assert "imap.example.org" in text

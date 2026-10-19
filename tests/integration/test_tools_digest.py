@@ -88,10 +88,10 @@ def test_hoca_and_ogrenci_ozet(digest_tool, seeded):
 
 def test_bana_ozet_with_profile(digest_tool, seeded):
     guidance = digest_tool("bana_ozet")
-    assert "update_profile" in guidance and "<untrusted-email nonce" not in guidance
+    assert "profili_guncelle" in guidance and "<untrusted-email nonce" not in guidance
 
     digest_tool(
-        "update_profile",
+        "profili_guncelle",
         add_interests=[{"name": "Güney Kampüs"}, {"name": "yemekhane"}, {"name": "tenis"}],
     )
     out = digest_tool("bana_ozet", days=7)
@@ -104,7 +104,7 @@ def test_bana_ozet_with_profile(digest_tool, seeded):
 
 
 def test_digest_tools_do_not_set_seen(digest_tool, seeded, greenmail, imap_client):
-    digest_tool("update_profile", add_interests=[{"name": "yemekhane"}])
+    digest_tool("profili_guncelle", add_interests=[{"name": "yemekhane"}])
     digest_tool("hoca_ozet")
     digest_tool("ogrenci_ozet")
     digest_tool("bana_ozet")

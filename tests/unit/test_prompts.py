@@ -62,7 +62,7 @@ async def test_prompt_arguments_are_applied():
 async def test_bana_prompt_mentions_empty_profile_flow():
     async with Client(build_server(CONFIG)) as c:
         text = prompt_text(await c.get_prompt("bana-ozet", {}))
-    assert "update_profile" in text and "profile is empty" in text
+    assert "profili_guncelle" in text and "profile is empty" in text
 
 
 def test_language_argument_cannot_inject_instructions():
@@ -88,7 +88,7 @@ async def test_baslangic_prompt_is_listed_without_required_arguments():
 async def test_baslangic_prompt_content():
     async with Client(build_server(CONFIG)) as c:
         text = prompt_text(await c.get_prompt("baslangic", {}))
-    for tool in ("server_info", "list_folders", "get_profile", "update_profile"):
+    for tool in ("sunucu_bilgisi", "klasorleri_listele", "profili_goster", "profili_guncelle"):
         assert f"`{tool}`" in text
     assert "setup_required" in text and "stop there" in text  # errors: explain the hint, stop
     for name in ("/posta:hoca-ozet", "/posta:ogrenci-ozet", "/posta:bana-ozet"):
