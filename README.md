@@ -131,4 +131,4 @@ uv run pytest tests/unit -q
 uv run posta-mcp setup      # Claude Code'a bu klasörü kullanan komutla ekler
 ```
 
-Testler: [docs/TESTING.md](docs/TESTING.md) · Tasarım: [docs/SPEC.md](docs/SPEC.md) · İstemciler: [docs/CLIENTS.md](docs/CLIENTS.md) · Sürüm ve doğrulama: [docs/HANDOFF.md](docs/HANDOFF.md)
+Testler: [docs/TESTING.md](docs/TESTING.md) · Tasarım: [docs/SPEC.md](docs/SPEC.md) · İstemciler: [docs/CLIENTS.md](docs/CLIENTS.md) · Sürüm ve doğrulama: [docs/HANDOFF.md](docs/HANDOFF.md) · Lisans: [MIT](LICENSE)
