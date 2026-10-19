@@ -71,14 +71,7 @@ registry. Optionally put your name in `LICENSE` instead of "posta-mcp contributo
 ## c) Repository and CI (done)
 
 The repository is public at https://github.com/kutluege/bumail_mcp (renamed from
-`bogazici_postanesi`; GitHub redirects the old URL). Push over the personal SSH key alias:
-
-```
-git remote set-url origin git@github-personal:kutluege/bumail_mcp.git
-git push origin main
-```
-
-CI runs `lint` (ruff), `unit` on ubuntu/windows/macos and `integration` (Docker GreenMail,
+`bogazici_postanesi`; GitHub redirects the old URL). CI runs `lint` (ruff), `unit` on ubuntu/windows/macos and `integration` (Docker GreenMail,
 `POSTA_REQUIRE_GREENMAIL=1`). Wait for it to be green on the commit you release.
 
 ## d) Release
