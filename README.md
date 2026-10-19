@@ -6,8 +6,6 @@ English: [docs/README.en.md](docs/README.en.md)
 
 Claude'un e-postanı okumasını, aramasını, düzenlemesini, özetlemesini ve taslak yazmasını sağlayan küçük bir program. Kendi bilgisayarında çalışır ve doğrudan posta sunucusuna bağlanır; arada başka bir servis yoktur. Boğaziçi Üniversitesi (BUmail) için hazırlandı; başka IMAP/SMTP hesaplarıyla da Claude Code üzerinden kullanılabilir.
 
-> **Durum: alfa.** Öğrenci hesapları gerçek sunucuda denendi ve çalışıyor. Personel hesapları ve posta listesi kuralları henüz denenmedi.
-
 Claude Desktop ve Claude Code ile çalışır. claude.ai web sitesinde ve mobil uygulamada çalışmaz.
 
 ## Kurulum
