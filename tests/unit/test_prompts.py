@@ -47,6 +47,8 @@ async def test_prompt_content(name):
     assert "From header" in text and "spoofed" in text
     assert "nothing relevant" in text or "found nothing" in text
     assert "Group by sender" in text and "short" in text
+    assert "read any of these messages in full" in text and "`postayi_oku`" in text
+    assert "show its body unchanged" in text
 
 
 @pytest.mark.anyio

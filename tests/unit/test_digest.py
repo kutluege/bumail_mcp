@@ -212,6 +212,29 @@ def test_per_message_truncation():
     assert "truncated: showing 300 of" in out and len(out) < 2500
 
 
+def test_shortened_body_points_to_the_full_text():
+    body = "a" * 10_000
+    out = run_category(FakeMailbox([make(7, "hoca@bogazici.edu.tr", "Uzun", body)]))
+    assert "full text: postayi_oku(folder='INBOX', uid=7)" in outside_blocks(out)
+    short = run_category(FakeMailbox([make(8, "hoca@bogazici.edu.tr", "Kısa", "Vize yarın")]))
+    assert "postayi_oku" not in short
+
+
+def test_list_bulletin_gets_room_for_all_announcements():
+    lines = [f"{i}. duyuru: Güney Kampüs etkinliği {'x' * 80}" for i in range(1, 80)]
+    bulletin = make(
+        9,
+        "students@list.bogazici.edu.tr",
+        "16 Ekim Duyuruları",
+        "\n".join(lines),
+        list_id="<students.list.bogazici.edu.tr>",
+    )
+    assert 1_500 < len(bulletin.body) < dg.LIST_SNIPPET
+    out = bana(FakeMailbox([bulletin]))
+    assert "1 school message(s) matching" in out
+    assert lines[-1] in out and "truncated" not in out and "postayi_oku(" not in out
+
+
 def test_snippet_cap_is_clamped():
     assert dg.clamp_snippet(10**9) == dg.MAX_SNIPPET and dg.clamp_snippet(0) == dg.MIN_SNIPPET
     assert dg.clamp_days(0) == 1 and dg.clamp_days(10**6) == dg.MAX_DAYS

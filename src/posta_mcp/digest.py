@@ -28,6 +28,9 @@ log = logging.getLogger(__name__)
 MAX_TOTAL_CHARS = 60_000  # cap on one digest, all blocks included
 MAX_DAYS = 90
 MIN_SNIPPET, MAX_SNIPPET = 200, 5_000
+# Mailing-list bulletins (e.g. the daily "Duyurular") pack many announcements into one message,
+# so they get more room than an ordinary snippet.
+LIST_SNIPPET = 12_000
 SCHOOL_CATEGORIES: tuple[Category, ...] = ("list", "standard", "faculty")
 _SUBJECT_LIST_MAX_LINES = 200
 
@@ -89,10 +92,18 @@ def _fetch(mb: Any, folder: str, cand: Candidate) -> bool:
 def _block(cand: Candidate, folder: str, max_chars: int) -> str:
     """Trusted label line (ours) followed by the untrusted message block."""
     assert cand.message is not None
+    message = _clean_body(cand.message)
+    if cand.verdict.category == "list":
+        max_chars = max(max_chars, LIST_SNIPPET)
     label = f"[{cand.verdict.category}] {cand.verdict.reason}"
     if cand.matched:
         label += "; matches your interests: " + ", ".join(one_line(m, 60) for m in cand.matched)
-    return label + "\n" + render_message(_clean_body(cand.message), max_chars=max_chars)
+    if len(message.body) > max_chars:
+        label += (
+            f"; body shortened here, full text: postayi_oku(folder={one_line(folder, 80)!r}, "
+            f"uid={cand.summary.uid})"
+        )
+    return label + "\n" + render_message(message, max_chars=max_chars)
 
 
 def _pack(
