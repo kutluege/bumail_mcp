@@ -1,8 +1,8 @@
 # Handoff: what the human must do next
 
 Everything below needs a person: a real mail account, a real GitHub/PyPI identity, or a decision.
-Nothing here has been published or pushed, CI has never run, and no preset value has been checked
-against a live server.
+The code is on GitHub (`kutluege/bumail_mcp`, CI green). Nothing is on PyPI, the MCP Registry or a
+GitHub release yet. The Boğaziçi student settings are live-verified; staff settings are not.
 
 ## Status at handoff
 
@@ -57,29 +57,29 @@ only, and try `/posta:hoca-ozet`.
 ## b) Names and OWNER placeholders (done), PyPI name check (open)
 
 Done: the GitHub owner is `kutluege`, the repository is
-`https://github.com/kutluege/bogazici_postanesi`, and the registry name is
+`https://github.com/kutluege/bumail_mcp`, and the registry name is
 `io.github.kutluege/posta-mcp`. The placeholders are replaced in `README.md` (mcp-name line),
 `server.json`, `manifest.json`, `pyproject.toml` (urls and author "Ege Kutlu", no email) and
 `tests/unit/test_packaging.py`. The README is in Turkish; the English copy is `docs/README.en.md`.
 
-Still to do: check that the PyPI package name `posta-mcp` is free (https://pypi.org/project/posta-mcp/).
+Checked 2026-10-19: the PyPI name `posta-mcp` is free (https://pypi.org/project/posta-mcp/ returns 404).
 If you rename the package, change `name` in `pyproject.toml`, `manifest.json`, `server.json`
 (`identifier`), the README commands, and `tests/unit/test_packaging.py`.
 `io.github.kutluege/...` must match the GitHub account you log in with when publishing to the
 registry. Optionally put your name in `LICENSE` instead of "posta-mcp contributors".
 
-## c) Create the public repository and let CI run
+## c) Repository and CI (done)
 
-CI (`.github/workflows/ci.yml`) has never run. After creating the empty public repository:
+The repository is public at https://github.com/kutluege/bumail_mcp (renamed from
+`bogazici_postanesi`; GitHub redirects the old URL). Push over the personal SSH key alias:
 
 ```
-git remote add origin https://github.com/kutluege/bogazici_postanesi.git
-git push -u origin main
+git remote set-url origin git@github-personal:kutluege/bumail_mcp.git
+git push origin main
 ```
 
-Watch the first run: `lint` (ruff), `unit` on ubuntu/windows/macos, `integration` (Docker GreenMail,
-`POSTA_REQUIRE_GREENMAIL=1`). Likely first-run problems: the pinned action SHAs, the
-`greenmail/standalone:2.1.14` image startup, Windows path handling. Fix before releasing.
+CI runs `lint` (ruff), `unit` on ubuntu/windows/macos and `integration` (Docker GreenMail,
+`POSTA_REQUIRE_GREENMAIL=1`). Wait for it to be green on the commit you release.
 
 ## d) Release
 

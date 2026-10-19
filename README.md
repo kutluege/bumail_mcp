@@ -65,7 +65,7 @@ posta-mcp **Claude Desktop** ve **Claude Code** ile çalışır. claude.ai web s
 
 ### Claude Desktop (en kolayı, terminal gerekmez)
 
-1. [Sürümler sayfasından](https://github.com/kutluege/bogazici_postanesi/releases) `posta-mcp-<sürüm>.mcpb` dosyasını indir.
+1. [Sürümler sayfasından](https://github.com/kutluege/bumail_mcp/releases) `posta-mcp-<sürüm>.mcpb` dosyasını indir.
 2. Dosyaya çift tıkla. Claude Desktop açılır ve eklentiyi kurmak isteyip istemediğini sorar. Açılmazsa Claude Desktop'ta Ayarlar > Uzantılar bölümüne dosyayı sürükle.
 3. Açılan pencereye Boğaziçi e-posta adresini ve BUmail parolanı yaz. "E-posta göndermeye izin ver" kutusunu boş bırak.
 4. Yeni bir sohbette `/posta:baslangic` yaz ya da "postalarımı kontrol et" de. Claude bağlantıyı dener ve neler yapabileceğini anlatır.
@@ -111,7 +111,7 @@ Program sırayla:
 Sonra Claude Code'u yeniden başlat ve `/posta:baslangic` yaz.
 
 > `uvx posta-mcp` komutları paket PyPI'de yayımlandıktan sonra çalışır. O zamana kadar şunu kullan:
-> `uvx --from git+https://github.com/kutluege/bogazici_postanesi posta-mcp setup`
+> `uvx --from git+https://github.com/kutluege/bumail_mcp posta-mcp setup`
 
 Claude Code'a elle eklemek istersen:
 
@@ -136,8 +136,8 @@ claude mcp add --scope user posta -- uvx posta-mcp serve
 ### Kaynaktan kurulum (geliştiriciler için)
 
 ```
-git clone https://github.com/kutluege/bogazici_postanesi
-cd bogazici_postanesi
+git clone https://github.com/kutluege/bumail_mcp
+cd bumail_mcp
 uv sync
 uv run posta-mcp setup
 ```

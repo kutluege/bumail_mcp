@@ -5,7 +5,7 @@
   "description": "Local IMAP/SMTP email MCP server with a Bogazici University preset; sending is opt-in.",
   "version": "0.1.0",
   "repository": {
-    "url": "https://github.com/kutluege/bogazici_postanesi",
+    "url": "https://github.com/kutluege/bumail_mcp",
     "source": "github"
   },
   "packages": [

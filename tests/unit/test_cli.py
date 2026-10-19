@@ -433,7 +433,7 @@ def test_serve_command_from_pypi():
 
 
 def test_serve_command_from_git():
-    url = "https://github.com/kutluege/bogazici_postanesi"
+    url = "https://github.com/kutluege/bumail_mcp"
     info = f'{{"url": "{url}", "vcs_info": {{"vcs": "git", "commit_id": "abc123"}}}}'
     assert setup_wizard.serve_command_for(info) == [
         "uvx",

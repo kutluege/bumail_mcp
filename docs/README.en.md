@@ -60,7 +60,7 @@ You need an MCP client (Claude Code, Claude Desktop, MCP Inspector, ...). Detail
 
 ### Claude Desktop (easiest, no terminal)
 
-Download `posta-mcp-<version>.mcpb` from the [GitHub releases](https://github.com/kutluege/bogazici_postanesi/releases)
+Download `posta-mcp-<version>.mcpb` from the [GitHub releases](https://github.com/kutluege/bumail_mcp/releases)
 and double-click it (or drop it on Claude Desktop's Settings > Extensions). The install dialog (in
 Turkish) asks only for your Boğaziçi email address, your password (stored by Desktop as a secret)
 and whether to allow sending (leave it off). The bundle is Boğaziçi-only; other IMAP providers use
@@ -87,7 +87,7 @@ posta-mcp does not work on the claude.ai website or the Claude mobile apps: it i
    keychain and finally offers to run `claude mcp add --scope user posta -- <serve command>` for
    you. The serve command matches how posta-mcp was installed (PyPI, git or a source checkout).
 
-Before the PyPI release use `uvx --from git+https://github.com/kutluege/bogazici_postanesi posta-mcp setup`.
+Before the PyPI release use `uvx --from git+https://github.com/kutluege/bumail_mcp posta-mcp setup`.
 
 Other commands: `posta-mcp parola` (alias `password`; update only the password),
 `posta-mcp doctor` (check config, keychain, login and the Claude Code registration, with a fix for
@@ -97,8 +97,8 @@ the profile). Update with `uvx posta-mcp@latest doctor`.
 ### From source
 
 ```
-git clone https://github.com/kutluege/bogazici_postanesi
-cd bogazici_postanesi
+git clone https://github.com/kutluege/bumail_mcp
+cd bumail_mcp
 uv sync
 uv run posta-mcp --version
 ```
