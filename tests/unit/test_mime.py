@@ -4,6 +4,10 @@ from __future__ import annotations
 
 import importlib.util
 import random
+from email.mime.base import MIMEBase
+from email.mime.image import MIMEImage
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from pathlib import Path
 
 import pytest
@@ -138,13 +142,54 @@ def test_recipients_with_commas_and_encoded_names():
 
 def test_html_only_alternative_uses_html_text():
     m = load("alternative_html_only.eml")
-    assert m.text_body == ""
+    assert m.text_body == m.html_text
     assert m.body == (
         "Merhaba öğrenciler,\n\n"
         "Duyuru: Güney Kampüs (https://www.bogazici.edu.tr/duyuru) yemekhanesi yarın kapalı.\n\n"
         "- Çay\n- Şeker\n\nçş\nSon satır"
     )
     assert "color:red" not in m.body and "Duyuru\n" not in m.body  # <title>/<style> dropped
+
+
+_FOOTER = "students mailing list\nUnsubscribe: https://list.bogazici.test/students"
+_BULLETIN = (
+    "<html><body><h1>16 Ekim Duyuruları</h1><p>Güney Kampüs kortları kapalı.</p></body></html>"
+)
+
+
+def _multipart(subtype: str, *parts: MIMEBase) -> bytes:
+    msg = MIMEMultipart(subtype)
+    msg["Subject"] = "Duyurular"
+    msg["From"] = "students@list.bogazici.test"
+    for part in parts:
+        msg.attach(part)
+    return msg.as_bytes()
+
+
+def test_html_bulletin_with_mailing_list_footer_keeps_the_html():
+    # Mailman wraps an HTML-only post as multipart/mixed [text/html, text/plain footer]; the
+    # footer must not hide the announcements.
+    raw = _multipart("mixed", MIMEText(_BULLETIN, "html", "utf-8"), MIMEText(_FOOTER, "plain"))
+    m = parse_message(raw, uid=1, folder="INBOX")
+    assert m.body == f"16 Ekim Duyuruları\n\nGüney Kampüs kortları kapalı.\n\n{_FOOTER}"
+
+
+def test_alternative_prefers_plain_and_does_not_repeat_the_html():
+    alt = MIMEMultipart("alternative")
+    alt.attach(MIMEText("Kortlar kapalı.", "plain", "utf-8"))
+    alt.attach(MIMEText("<p>Kortlar <b>kapalı</b>.</p>", "html", "utf-8"))
+    m = parse_message(_multipart("mixed", alt, MIMEText(_FOOTER, "plain")), uid=1, folder="INBOX")
+    assert m.body == f"Kortlar kapalı.\n\n{_FOOTER}"
+
+
+def test_alternative_with_empty_plain_falls_back_to_related_html():
+    related = MIMEMultipart("related")
+    related.attach(MIMEText(_BULLETIN, "html", "utf-8"))
+    related.attach(MIMEImage(b"GIF89a", "gif"))
+    raw = _multipart("alternative", MIMEText("  \n", "plain"), related)
+    m = parse_message(raw, uid=1, folder="INBOX")
+    assert m.body == "16 Ekim Duyuruları\n\nGüney Kampüs kortları kapalı."
+    assert [a.content_type for a in m.attachments] == ["image/gif"]
 
 
 def test_hidden_html_text_is_dropped():

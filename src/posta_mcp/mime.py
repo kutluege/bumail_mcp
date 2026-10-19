@@ -463,19 +463,37 @@ def _attachment_parts(msg: Message) -> list[tuple[Message, str]]:
     return parts
 
 
+def _render_body_part(part: Message) -> str:
+    text = _decode_text_part(part, _payload(part))
+    if part.get_content_type() == "text/html":
+        return html_to_text(text)
+    return strip_invisible(text.replace("\r\n", "\n").replace("\r", "\n")).strip()
+
+
+def _readable_parts(node: Message) -> list[str]:
+    """Body texts in reading order. Alternatives of one content collapse to one: text/plain if it
+    has content, else the last (richest) non-empty one. Every other multipart (mixed, related, ...)
+    keeps all its body parts, e.g. an HTML-only bulletin plus a mailing list's text/plain footer."""
+    payload = node.get_payload()
+    if node.get_content_maintype() == "multipart" and isinstance(payload, list):
+        rendered = [(part, _readable_parts(part)) for part in payload]
+        if node.get_content_subtype() == "alternative":
+            plain = [t for p, t in rendered if p.get_content_type() == "text/plain" and any(t)]
+            filled = [t for _, t in rendered if any(t)]
+            return plain[0] if plain else (filled[-1] if filled else [])
+        return [t for _, texts in rendered for t in texts]
+    return [_render_body_part(node)] if _is_body(node, _filename(node)) else []
+
+
 def parse_message(raw: bytes, uid: int, folder: str, flags: Any = ()) -> ParsedMessage:
-    """Parse a full RFC 5322 message.  Prefers text/plain; falls back to HTML rendering."""
+    """Parse a full RFC 5322 message.  Within an alternative, prefers text/plain; standalone HTML
+    parts (not an alternative of a plain part) are rendered and kept in reading order."""
     msg = message_from_bytes(raw, policy=policy.compat32)
-    plain: list[str] = []
-    html: list[str] = []
-    for leaf in _leaves(msg):
-        if not _is_body(leaf, _filename(leaf)):
-            continue
-        text = _decode_text_part(leaf, _payload(leaf))
-        if leaf.get_content_type() == "text/html":
-            html.append(html_to_text(text))
-        else:
-            plain.append(strip_invisible(text.replace("\r\n", "\n").replace("\r", "\n")).strip())
+    html = [
+        _render_body_part(leaf)
+        for leaf in _leaves(msg)
+        if leaf.get_content_type() == "text/html" and _is_body(leaf, _filename(leaf))
+    ]
     attachments = [
         Attachment(
             filename=name or f"attachment-{i}",
@@ -495,7 +513,7 @@ def parse_message(raw: bytes, uid: int, folder: str, flags: Any = ()) -> ParsedM
         reply_to=[format_address(n, a) for n, a in parse_addresses(h.get("reply-to"))],
         in_reply_to=next(iter(_MSGID.findall(_header_text(h.get("in-reply-to")))), None),
         references=_MSGID.findall(_header_text(h.get("references"))),
-        text_body="\n\n".join(p for p in plain if p),
+        text_body="\n\n".join(p for p in _readable_parts(msg) if p),
         html_text="\n\n".join(p for p in html if p),
         attachments=attachments,
         **header_fields(msg),

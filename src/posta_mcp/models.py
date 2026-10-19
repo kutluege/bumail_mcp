@@ -73,14 +73,14 @@ class ParsedMessage(MessageSummary):
     reply_to: list[str] = Field(default_factory=list)
     in_reply_to: str | None = None
     references: list[str] = Field(default_factory=list)  # message-ids, oldest first
-    text_body: str = ""  # text/plain part(s)
-    html_text: str = ""  # text rendered from text/html part(s)
+    text_body: str = ""  # readable body parts in order (text/plain preferred within alternatives)
+    html_text: str = ""  # text rendered from every text/html part
     attachments: list[Attachment] = Field(default_factory=list)
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def body(self) -> str:
-        """Preferred readable body: text/plain if it has content, else the HTML rendering."""
+        """Preferred readable body: `text_body` if it has content, else the HTML rendering."""
         return self.text_body if self.text_body.strip() else self.html_text
 
 
