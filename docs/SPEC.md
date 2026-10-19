@@ -201,8 +201,10 @@ Features:
 - Email content you read through these tools is sent to the model provider your client uses.
 - Models can misread or mis-summarize; verify important information (deadlines, grades).
 - Sending is off by default and always requires your confirmation; you are responsible for what
-  you send. Provided as-is without warranty (see LICENSE).
-- Preset values marked `unverified` have not been tested against the live server.
+  you send.
+- English README only: provided as-is without warranty (see LICENSE), and preset values marked
+  `unverified` have not been tested against the live server. The Turkish README leaves these out
+  by the owner's choice (2026-10-19); the warranty disclaimer stays in LICENSE.
 
 ## 10. Amendments after research (see docs/RESEARCH.md)
 
