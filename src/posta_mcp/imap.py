@@ -28,7 +28,7 @@ from typing import Any, Literal
 import imapclient
 from imapclient import exceptions as imap_exc
 
-from posta_mcp import credentials, tls
+from posta_mcp import credentials, hints, tls
 from posta_mcp.config import MAX_MESSAGE_BYTES, Config
 from posta_mcp.logs import redact
 from posta_mcp.mime import parse_message
@@ -80,7 +80,14 @@ class FolderInfo:
 
 
 class MailboxError(RuntimeError):
-    """Raised with a short, secret-free message suitable for showing to the user."""
+    """Raised with a short, secret-free message suitable for showing to the user.
+
+    `kind` classifies the failure for ``posta_mcp.hints`` (None: no specific advice).
+    """
+
+    def __init__(self, message: str, *, kind: str | None = None) -> None:
+        super().__init__(message)
+        self.kind = kind
 
 
 ClientFactory = Callable[..., Any]
@@ -114,7 +121,9 @@ def _errors(action: str) -> Iterator[None]:
         raise
     except (imap_exc.IMAPClientError, imaplib.IMAP4.error, OSError, EOFError) as exc:
         log.warning("IMAP %s failed: %s", action, type(exc).__name__)
-        raise MailboxError(f"IMAP {action} failed: {_describe(exc)}") from None
+        raise MailboxError(
+            f"IMAP {action} failed: {_describe(exc)}", kind=hints.classify(exc)
+        ) from None
 
 
 def _walk_has_attachment(node: Any) -> bool:
@@ -192,7 +201,8 @@ class Mailbox:
                     if not client.has_capability("STARTTLS"):
                         raise MailboxError(
                             "The server does not offer STARTTLS; refusing to log in without "
-                            "encryption. Use security 'ssl' or a server that supports STARTTLS."
+                            "encryption. Use security 'ssl' or a server that supports STARTTLS.",
+                            kind="insecure",
                         )
                     client.starttls(context)  # verified; failure raises, login never happens
             try:
@@ -200,10 +210,13 @@ class Mailbox:
             except (imap_exc.IMAPClientError, imaplib.IMAP4.error):
                 raise MailboxError(
                     "IMAP login failed: the server rejected the credentials "
-                    f"for '{self.config.login}'."
+                    f"for '{self.config.login}'.",
+                    kind="auth",
                 ) from None
             except OSError as exc:
-                raise MailboxError(f"IMAP login failed: {_describe(exc)}") from None
+                raise MailboxError(
+                    f"IMAP login failed: {_describe(exc)}", kind=hints.classify(exc)
+                ) from None
         except BaseException:
             if client is not None:
                 try:
@@ -427,7 +440,8 @@ class Mailbox:
         if not use_move and not self._has("UIDPLUS"):
             raise MailboxError(
                 "This server supports neither MOVE nor UIDPLUS; refusing to move messages "
-                "because that could delete other messages."
+                "because that could delete other messages.",
+                kind="unsupported_move",
             )
         self._select(folder, readonly=False)
         with _errors("move"):

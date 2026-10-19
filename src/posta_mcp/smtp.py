@@ -18,7 +18,7 @@ import smtplib
 import ssl
 from email.message import EmailMessage
 
-from posta_mcp import compose, credentials, tls
+from posta_mcp import compose, credentials, hints, tls
 from posta_mcp.config import Config
 from posta_mcp.logs import redact
 
@@ -26,7 +26,14 @@ TIMEOUT = 30.0
 
 
 class SmtpError(RuntimeError):
-    """A failed or refused send. The message is short and secret-free."""
+    """A failed or refused send. The message is short and secret-free.
+
+    `kind` classifies the failure for ``posta_mcp.hints`` (None: no specific advice).
+    """
+
+    def __init__(self, message: str, *, kind: str | None = None) -> None:
+        super().__init__(message)
+        self.kind = kind
 
 
 def _server_text(exc: smtplib.SMTPResponseException) -> str:
@@ -44,7 +51,8 @@ def _open(config: Config, context: ssl.SSLContext, timeout: float) -> smtplib.SM
         client.ehlo()
         if not client.has_extn("starttls"):
             raise SmtpError(
-                "The SMTP server does not offer STARTTLS; refusing to send without encryption."
+                "The SMTP server does not offer STARTTLS; refusing to send without encryption.",
+                kind="insecure",
             )
         client.starttls(context=context)
         client.ehlo()  # capabilities (incl. AUTH) must be re-read after the upgrade
@@ -75,7 +83,7 @@ def send_raw(config: Config, sender: str, recipients: list[str], data: bytes) ->
     try:
         password = credentials.get_password(config.login)
     except credentials.CredentialsError as exc:
-        raise SmtpError(str(exc)) from None
+        raise SmtpError(str(exc), kind=exc.kind) from None
     where = f"{config.smtp.host}:{config.smtp.port}"
     context = tls.make_ssl_context(config.ca_file)
     client: smtplib.SMTP | None = None
@@ -86,10 +94,14 @@ def send_raw(config: Config, sender: str, recipients: list[str], data: bytes) ->
     except SmtpError:
         raise
     except smtplib.SMTPAuthenticationError as exc:
-        raise SmtpError(f"SMTP login was rejected by {where} ({exc.smtp_code}).") from None
+        raise SmtpError(
+            f"SMTP login was rejected by {where} ({exc.smtp_code}).", kind="auth"
+        ) from None
     except smtplib.SMTPRecipientsRefused as exc:
         detail = ", ".join(f"{addr} ({code})" for addr, (code, _msg) in exc.recipients.items())
-        raise SmtpError(f"The server refused every recipient: {detail}.") from None
+        raise SmtpError(
+            f"The server refused every recipient: {detail}.", kind="recipient"
+        ) from None
     except smtplib.SMTPSenderRefused as exc:
         raise SmtpError(f"The server refused the sender address ({exc.smtp_code}).") from None
     except smtplib.SMTPResponseException as exc:
@@ -100,12 +112,15 @@ def send_raw(config: Config, sender: str, recipients: list[str], data: bytes) ->
         reason = getattr(exc, "reason", None) or type(exc).__name__
         raise SmtpError(
             f"TLS handshake with {where} failed ({reason}); the certificate must be valid for "
-            "the host (set POSTA_CA_FILE for a private CA)."
+            "the host (set POSTA_CA_FILE for a private CA).",
+            kind=hints.classify(exc),
         ) from None
     except smtplib.SMTPServerDisconnected:
         raise SmtpError(f"SMTP server {where} closed the connection.") from None
     except (smtplib.SMTPException, OSError) as exc:
-        raise SmtpError(f"SMTP to {where} failed ({type(exc).__name__}).") from None
+        raise SmtpError(
+            f"SMTP to {where} failed ({type(exc).__name__}).", kind=hints.classify(exc)
+        ) from None
     finally:
         if client is not None:
             _close(client)

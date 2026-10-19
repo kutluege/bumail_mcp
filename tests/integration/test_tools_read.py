@@ -128,3 +128,4 @@ def test_errors_are_short_and_secret_free(tool, greenmail):
     tool.use(greenmail.student, POSTA_PASSWORD="wrong-fake-password")
     bad = tool("search_messages")
     assert bad.is_error and "wrong-fake-password" not in bad.text and "login failed" in bad.text
+    assert "Giriş başarısız" in bad.text  # the plain-Turkish advice from posta_mcp.hints

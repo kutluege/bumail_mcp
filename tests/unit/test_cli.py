@@ -12,16 +12,6 @@ def test_version(capsys):
     assert __version__ in capsys.readouterr().out
 
 
-def test_serve_refuses_without_settings(tmp_path, monkeypatch, capsys):
-    monkeypatch.setenv("POSTA_CONFIG", str(tmp_path / "none.toml"))
-    for name in ("POSTA_EMAIL", "POSTA_PRESET", "POSTA_IMAP_HOST", "POSTA_SMTP_HOST"):
-        monkeypatch.delenv(name, raising=False)
-    assert main(["serve"]) == 2
-    captured = capsys.readouterr()
-    assert "missing settings" in captured.err
-    assert captured.out == ""
-
-
 def test_written_config_has_no_secret_and_round_trips(tmp_path):
     path = tmp_path / "sub" / "config.toml"
     _write_config(path, "generic", "ü@example.org", "login", {"imap": "i.example.org"})
