@@ -6,12 +6,12 @@ you will keep in shell history. Server name used below: `posta`.
 
 ## Claude Code
 
-`uvx posta-mcp setup` (or `uv run posta-mcp setup` from a checkout) stores the password, writes
+`uvx --from git+https://github.com/kutluege/bumail_mcp posta-mcp setup` (or `uv run posta-mcp setup` from a checkout) stores the password, writes
 `config.toml` (which holds the email, so no `--env POSTA_EMAIL` is needed) and offers to register the
 server for you. To do it by hand:
 
 ```
-claude mcp add --scope user posta -- uvx posta-mcp serve
+claude mcp add --scope user posta -- uvx --from git+https://github.com/kutluege/bumail_mcp posta-mcp serve
 ```
 
 Rules for `claude mcp add`: the flags (`--scope`, `--env`) go before the server name, and everything
@@ -140,6 +140,6 @@ saved a draft in Drafts and reported "NOT been sent"; afterwards the seeded mess
 
 ## Other clients
 
-Any MCP client that can launch a stdio command works: use `uvx posta-mcp serve` as the command
+Any MCP client that can launch a stdio command works: use `uvx --from git+https://github.com/kutluege/bumail_mcp posta-mcp serve` as the command
 and pass the `POSTA_*` variables as environment. A client without elicitation support can read and
 draft but not send.

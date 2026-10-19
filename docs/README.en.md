@@ -73,26 +73,28 @@ posta-mcp does not work on the claude.ai website or the Claude mobile apps: it i
 
 ### Claude Code (two commands)
 
-1. Install [uv](https://docs.astral.sh/uv/) once:
+Needs [git](https://git-scm.com/) and [uv](https://docs.astral.sh/uv/).
+
+1. Install uv once:
    `powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"` (Windows) or
    `curl -LsSf https://astral.sh/uv/install.sh | sh` (macOS/Linux), then open a new terminal.
 2. Run the setup wizard (prompts are in Turkish):
 
    ```
-   uvx posta-mcp setup
+   uvx --from git+https://github.com/kutluege/bumail_mcp posta-mcp setup
    ```
 
    It asks for your email (and detects a Boğaziçi student/staff account from it), your password,
    tests the login *before* saving anything, retries on failure, stores the password in the OS
    keychain and finally offers to run `claude mcp add --scope user posta -- <serve command>` for
-   you. The serve command matches how posta-mcp was installed (PyPI, git or a source checkout).
+   you. The serve command matches how posta-mcp was installed (git, a source checkout, or PyPI
+   once published).
 
-Before the PyPI release use `uvx --from git+https://github.com/kutluege/bumail_mcp posta-mcp setup`.
-
-Other commands: `posta-mcp parola` (alias `password`; update only the password),
-`posta-mcp doctor` (check config, keychain, login and the Claude Code registration, with a fix for
-every failure), `posta-mcp forget` (alias `kaldir`; remove the keychain entry, config and optionally
-the profile). Update with `uvx posta-mcp@latest doctor`.
+Other commands use the same prefix (`uvx --from git+https://github.com/kutluege/bumail_mcp
+posta-mcp <command>`): `parola` (alias `password`; update only the password), `doctor` (check
+config, keychain, login and the Claude Code registration, with a fix for every failure), `forget`
+(alias `kaldir`; remove the keychain entry, config and optionally the profile). The git install
+follows the `main` branch.
 
 ### From source
 
