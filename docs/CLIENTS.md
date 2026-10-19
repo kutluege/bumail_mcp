@@ -6,25 +6,28 @@ you will keep in shell history. Server name used below: `posta`.
 
 ## Claude Code
 
-Store the password once (`uvx posta-mcp setup`, or `uv run posta-mcp setup` from a checkout), then:
+`uvx posta-mcp setup` (or `uv run posta-mcp setup` from a checkout) stores the password, writes
+`config.toml` (which holds the email, so no `--env POSTA_EMAIL` is needed) and offers to register the
+server for you. To do it by hand:
 
 ```
-claude mcp add --transport stdio --env POSTA_EMAIL=ad.soyad@std.bogazici.edu.tr posta -- uvx posta-mcp serve
+claude mcp add --scope user posta -- uvx posta-mcp serve
 ```
 
-Rules for `claude mcp add`: the flags (`--transport`, `--env`) go before the server name, and
-everything after `--` is the server command. Add `--env POSTA_PRESET=bogazici` (default for the
-preset you chose in `setup`) or `--env POSTA_ALLOW_SEND=true` only if you want them. Use
-`--scope user` to make it available in every project.
+Rules for `claude mcp add`: the flags (`--scope`, `--env`) go before the server name, and everything
+after `--` is the server command. `--scope user` makes it available in every project (the default
+`local` scope only covers the current folder). Add `--env POSTA_ALLOW_SEND=true` only if you want
+sending. An `--env POSTA_EMAIL=...` from an older registration overrides `config.toml`; accepting
+"replace" in `setup` removes it.
 
-From a source checkout instead of PyPI:
+From a source checkout instead of PyPI (`setup` prints this form itself when run from a checkout):
 
 ```
-claude mcp add --transport stdio --env POSTA_EMAIL=you@example.org posta -- uv run --directory /path/to/posta-mcp posta-mcp serve
+claude mcp add --scope user posta -- uv run --directory /path/to/posta-mcp posta-mcp serve
 ```
 
 - **Prompts become slash commands.** `/posta:hoca-ozet 7`, `/posta:ogrenci-ozet 7`,
-  `/posta:bana-ozet 3` (also written `/mcp__posta__hoca-ozet 7`). Arguments are positional,
+  `/posta:bana-ozet 3`, and `/posta:baslangic` for a first-run check (also written `/mcp__posta__hoca-ozet 7`). Arguments are positional,
   space-separated: `days`, then optional `language`.
 - **Elicitation works** in Claude Code (v2.1.76 and later). With sending enabled, `send_message` and
   `send_draft` show a confirmation dialog with the full message. Do not install an `Elicitation` hook
@@ -36,11 +39,11 @@ claude mcp add --transport stdio --env POSTA_EMAIL=you@example.org posta -- uv r
 ## Claude Desktop
 
 Install the `.mcpb` bundle: download `posta-mcp-<version>.mcpb` from the release, then open it in
-Claude Desktop (or Settings > Extensions > Advanced > Install Extension). The install dialog asks for:
+Claude Desktop (or Settings > Extensions > Advanced > Install Extension). The bundle is Boğaziçi-only
+(`POSTA_PRESET=bogazici` is fixed; other providers use Claude Code). The Turkish install dialog asks for:
 
 | Field | Meaning |
 |---|---|
-| Institution preset | `bogazici` (default) or `generic` |
 | Email address | your full address; the Boğaziçi student/staff hosts are chosen from its domain |
 | Mail password | stored by Desktop as a secret and passed to the server as `POSTA_PASSWORD` |
 | Allow sending | off by default |
@@ -55,6 +58,8 @@ Notes and caveats:
   searching, organizing and drafting still work. Treat sending as unavailable on Desktop.
 - Prompts (`hoca-ozet`, ...) should be offered by Desktop's attachment menu; this is not verified. If
   you do not see them, ask for the tool in plain words ("run hoca_ozet for the last 7 days").
+- If the email or password is missing or wrong, the server still starts: `server_info` and the
+  `baslangic` prompt explain in Turkish what to fix in the extension settings.
 - Manual alternative without the bundle: add a server to `claude_desktop_config.json` with
   `"command": "uvx"`, `"args": ["posta-mcp", "serve"]` and an `env` block.
 

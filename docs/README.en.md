@@ -58,30 +58,41 @@ These seven rules are enforced in code and covered by tests:
 You need an MCP client (Claude Code, Claude Desktop, MCP Inspector, ...). Details per client are in
 [docs/CLIENTS.md](CLIENTS.md).
 
-### uvx (recommended)
+### Claude Desktop (easiest, no terminal)
 
-Needs [uv](https://docs.astral.sh/uv/). After the first release on PyPI:
+Download `posta-mcp-<version>.mcpb` from the [GitHub releases](https://github.com/kutluege/bogazici_postanesi/releases)
+and double-click it (or drop it on Claude Desktop's Settings > Extensions). The install dialog (in
+Turkish) asks only for your Boğaziçi email address, your password (stored by Desktop as a secret)
+and whether to allow sending (leave it off). The bundle is Boğaziçi-only; other IMAP providers use
+Claude Code. Then type `/posta:baslangic` in a new chat. If the extension does not start, install
+uv (below) and restart Desktop. Sending probably will not work in Desktop; drafts do. See
+[docs/CLIENTS.md](CLIENTS.md).
 
-```
-uvx posta-mcp setup        # one-time: stores your password in the OS keychain
-uvx posta-mcp doctor       # checks config, keychain and IMAP login
-```
+posta-mcp does not work on the claude.ai website or the Claude mobile apps: it is a local
+(stdio-only) server.
 
-Run the server from a client, for example with Claude Code:
+### Claude Code (two commands)
 
-```
-claude mcp add --transport stdio --env POSTA_EMAIL=ad.soyad@std.bogazici.edu.tr posta -- uvx posta-mcp serve
-```
+1. Install [uv](https://docs.astral.sh/uv/) once:
+   `powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"` (Windows) or
+   `curl -LsSf https://astral.sh/uv/install.sh | sh` (macOS/Linux), then open a new terminal.
+2. Run the setup wizard (prompts are in Turkish):
 
-Before the PyPI release you can use a built wheel: `uv build`, then
-`uvx --from dist/posta_mcp-0.1.0-py3-none-any.whl posta-mcp --version`.
+   ```
+   uvx posta-mcp setup
+   ```
 
-### Claude Desktop (MCPB bundle)
+   It asks for your email (and detects a Boğaziçi student/staff account from it), your password,
+   tests the login *before* saving anything, retries on failure, stores the password in the OS
+   keychain and finally offers to run `claude mcp add --scope user posta -- <serve command>` for
+   you. The serve command matches how posta-mcp was installed (PyPI, git or a source checkout).
 
-Download `posta-mcp-<version>.mcpb` from the GitHub release and open it in Claude Desktop
-(Settings > Extensions). It asks for your institution preset, email address, password (stored by
-the host as a secret) and whether to allow sending. See [docs/CLIENTS.md](CLIENTS.md) for
-the Desktop caveats (notably: sending probably will not work there, drafts do).
+Before the PyPI release use `uvx --from git+https://github.com/kutluege/bogazici_postanesi posta-mcp setup`.
+
+Other commands: `posta-mcp parola` (alias `password`; update only the password),
+`posta-mcp doctor` (check config, keychain, login and the Claude Code registration, with a fix for
+every failure), `posta-mcp forget` (alias `kaldir`; remove the keychain entry, config and optionally
+the profile). Update with `uvx posta-mcp@latest doctor`.
 
 ### From source
 
@@ -98,8 +109,9 @@ uv run posta-mcp --version
 posta-mcp setup
 ```
 
-asks for the preset, your email, the login name (a sensible default is derived from the preset) and
-your password. The password is read with `getpass` (not echoed) and stored only in the OS
+asks for your email (the preset is picked from its domain; otherwise it offers the `generic` preset
+and asks for the hosts), the login name (a sensible default is derived from the preset) and your
+password, and tests the login before saving. The password is read with `getpass` (not echoed) and stored only in the OS
 keychain (service `posta-mcp`, key = login name). Non-secret settings go to `config.toml` in your
 user config directory (`posta-mcp doctor` prints the path). Then it tests the IMAP login.
 

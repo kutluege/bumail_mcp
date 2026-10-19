@@ -8,7 +8,9 @@ English: [docs/README.en.md](docs/README.en.md)
 
 posta-mcp, Claude'un e-postanı okumasını, aramasını, düzenlemesini ve taslak yazmasını sağlayan küçük bir programdır. Kendi bilgisayarında çalışır ve doğrudan posta sunucusuna bağlanır. Aradaki başka bir servis yoktur.
 
-Önce Boğaziçi Üniversitesi (bumail) için hazırlandı. İstersen başka bir IMAP/SMTP posta hesabıyla da kullanabilirsin (`generic` ayarı).
+Önce Boğaziçi Üniversitesi (bumail) için hazırlandı. İstersen başka bir IMAP/SMTP posta hesabıyla da kullanabilirsin (`generic` ayarı, sadece Claude Code ile).
+
+**Hızlı başlangıç:** Claude Desktop kullanıyorsan `.mcpb` dosyasını indirip çift tıkla, e-posta ve parolanı gir. Ayrıntı: [Kurulum](#kurulum).
 
 - **MCP**: Claude gibi yapay zekâ uygulamalarına yeni yetenekler ekleyen ortak bir standart. posta-mcp bu standartla çalışır.
 - **IMAP / SMTP**: Posta kutusunu okumak (IMAP) ve posta göndermek (SMTP) için kullanılan olağan yöntemler.
@@ -59,64 +61,88 @@ Bunlar kodda uygulanır ve testlerle denenir.
 
 ## Kurulum
 
-Önce [uv](https://docs.astral.sh/uv/) kurman gerekir. uv, Python programlarını tek komutla çalıştıran bir araçtır. Python'u ayrıca kurmana gerek kalmaz.
+posta-mcp **Claude Desktop** ve **Claude Code** ile çalışır. claude.ai web sitesinde ve Claude mobil uygulamasında çalışmaz, çünkü program sadece senin bilgisayarında çalışır.
 
-### 1. Parolanı kaydet
+### Claude Desktop (en kolayı, terminal gerekmez)
+
+1. [Sürümler sayfasından](https://github.com/kutluege/bogazici_postanesi/releases) `posta-mcp-<sürüm>.mcpb` dosyasını indir.
+2. Dosyaya çift tıkla. Claude Desktop açılır ve eklentiyi kurmak isteyip istemediğini sorar. Açılmazsa Claude Desktop'ta Ayarlar > Uzantılar bölümüne dosyayı sürükle.
+3. Açılan pencereye Boğaziçi e-posta adresini ve BUmail parolanı yaz. "E-posta göndermeye izin ver" kutusunu boş bırak.
+4. Yeni bir sohbette `/posta:baslangic` yaz ya da "postalarımı kontrol et" de. Claude bağlantıyı dener ve neler yapabileceğini anlatır.
+
+Parolanı daha sonra değiştirmek istersen (örneğin süresi dolduysa) Ayarlar > Uzantılar > Boğaziçi Postanesi bölümünden güncelle.
+
+> Uzantı açılmazsa aşağıdaki "uv'yi kur" adımını yap ve Claude Desktop'u kapatıp yeniden aç.
+
+Claude Desktop'ta gönderme büyük ihtimalle çalışmaz. Okuma, arama, düzenleme ve taslak çalışır. Taslaklar posta kutundaki Taslaklar klasörüne gider, oradan gönderebilirsin.
+
+### Claude Code (iki komut)
+
+**1. uv'yi kur.** uv, Python programlarını tek komutla çalıştıran küçük bir araçtır. Python'u ayrıca kurmana gerek kalmaz. Bir kez yapman yeter.
+
+Windows (PowerShell):
+
+```
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+macOS / Linux:
+
+```
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Kurduktan sonra terminali kapatıp yeni bir terminal aç.
+
+**2. Kurulumu başlat.**
 
 ```
 uvx posta-mcp setup
 ```
 
-Program senden ayar adını (`bogazici`), e-posta adresini, kullanıcı adını (hazır gelir, Enter'a basman yeter) ve parolanı ister. Parola yazarken görünmez ve anahtar zincirine kaydedilir. En sonda bir giriş denemesi yapar.
+Program sırayla:
 
-> `uvx` komutları paket PyPI'de yayımlandıktan sonra çalışır. O zamana kadar aşağıdaki "Kaynaktan kurulum" yolunu kullan.
+- e-posta adresini sorar ve öğrenci ya da personel hesabı olduğunu kendisi anlar,
+- parolanı sorar (yazarken görünmez),
+- girişi dener; olmazsa sebebini Türkçe yazar ve parolayı yeniden sorar,
+- sadece giriş başarılı olunca kaydeder (parola işletim sisteminin anahtar zincirine, gerisi bir ayar dosyasına),
+- "Claude Code'a şimdi ekleyeyim mi?" diye sorar. "E" dersen kendisi ekler.
 
-Her şeyin yolunda olup olmadığına şöyle bakarsın:
+Sonra Claude Code'u yeniden başlat ve `/posta:baslangic` yaz.
+
+> `uvx posta-mcp` komutları paket PyPI'de yayımlandıktan sonra çalışır. O zamana kadar şunu kullan:
+> `uvx --from git+https://github.com/kutluege/bogazici_postanesi posta-mcp setup`
+
+Claude Code'a elle eklemek istersen:
 
 ```
-uvx posta-mcp doctor
+claude mcp add --scope user posta -- uvx posta-mcp serve
 ```
 
-### 2a. Claude Code'a ekle
+### Sık kullanılan komutlar
 
-Öğrenciysen (kendi adresini yaz):
+| Komut | Ne yapar |
+|---|---|
+| `uvx posta-mcp setup` | Hesabı kurar ya da baştan kurar |
+| `uvx posta-mcp parola` | Sadece parolayı günceller (örneğin süresi dolduysa) |
+| `uvx posta-mcp doctor` | Ayarları, parolayı ve girişi kontrol eder; sorun varsa ne yapacağını yazar |
+| `uvx posta-mcp forget` | Bu bilgisayardaki hesap bilgilerini siler (parola, ayarlar, isteğe bağlı profil) |
 
-```
-claude mcp add --transport stdio --env POSTA_EMAIL=ad.soyad@std.bogazici.edu.tr posta -- uvx posta-mcp serve
-```
+### Güncelleme ve kaldırma
 
-Bütün projelerde kullanmak istersen `--scope user` ekle. Bağlantıyı Claude Code içinde `/mcp` yazarak kontrol edebilirsin.
+- **Claude Desktop:** Yeni sürümün `.mcpb` dosyasını indirip yeniden aç. Kaldırmak için Ayarlar > Uzantılar bölümünden eklentiyi kaldır.
+- **Claude Code:** En yeni sürümü almak için `uvx posta-mcp@latest doctor` komutunu bir kez çalıştır. Kaldırmak için önce `uvx posta-mcp forget`, sonra `claude mcp remove posta --scope user`.
 
-### 2b. Claude Desktop'a ekle
-
-1. GitHub sürümler sayfasından `posta-mcp-<sürüm>.mcpb` dosyasını indir.
-2. Dosyayı Claude Desktop ile aç (ya da Ayarlar > Uzantılar).
-3. Açılan pencerede ayar adını (`bogazici`), e-posta adresini ve parolanı gir. "Göndermeye izin ver" kutusunu boş bırak.
-
-Bilmen gerekenler:
-
-- Claude Desktop'ta gönderme büyük ihtimalle çalışmaz, çünkü onay penceresini gösterip gösteremediği belli değil. Okuma, arama, düzenleme ve taslak çalışır.
-- Uzantı açılmazsa [uv](https://docs.astral.sh/uv/) kurup Claude Desktop'u yeniden başlat.
-
-Daha fazla ayrıntı: [docs/CLIENTS.md](docs/CLIENTS.md).
-
-### Kaynaktan kurulum
-
-PyPI'den önce ya da kodu görmek istersen:
+### Kaynaktan kurulum (geliştiriciler için)
 
 ```
 git clone https://github.com/kutluege/bogazici_postanesi
 cd bogazici_postanesi
 uv sync
 uv run posta-mcp setup
-uv run posta-mcp doctor
 ```
 
-Sonra Claude Code'a şöyle eklersin (yolu kendi klasörünle değiştir):
-
-```
-claude mcp add --transport stdio --env POSTA_EMAIL=ad.soyad@std.bogazici.edu.tr posta -- uv run --directory C:\yol\bogazici_postanesi posta-mcp serve
-```
+`setup`, Claude Code'a eklerken bu klasörü kullanan doğru komutu kendisi yazar.
 
 ## Kullanım
 
@@ -131,12 +157,13 @@ Claude'a normal cümlelerle yazabilirsin:
 Hazır özetler Claude Code'da komut olarak çalışır. Sayı, kaç günlük postaya bakılacağıdır (boş bırakırsan 7):
 
 ```
+/posta:baslangic
 /posta:hoca-ozet 7
 /posta:ogrenci-ozet 7
 /posta:bana-ozet 3
 ```
 
-Bu komutlar `/mcp__posta__hoca-ozet 7` biçiminde de yazılabilir. İstersen sayıdan sonra dil de yazabilirsin. Özetler varsayılan olarak Türkçe gelir.
+`/posta:baslangic` bağlantıyı dener, neler yapabileceğini örneklerle anlatır ve ilgi alanlarını sorar; ilk kullanımda bununla başla. Claude Desktop'ta bu komutları sohbet kutusundaki "+" menüsünde bulursun; görmezsen Claude'a düz cümleyle "son 7 günün hoca postalarını özetle" de. Bu komutlar `/mcp__posta__hoca-ozet 7` biçiminde de yazılabilir. İstersen sayıdan sonra dil de yazabilirsin. Özetler varsayılan olarak Türkçe gelir.
 
 Claude'un kullandığı araçlar:
 
@@ -199,21 +226,22 @@ Ayrıca:
 
 ## Sorun giderme
 
-Önce şunu çalıştır:
+Claude bir hata aldığında sebebini ve ne yapman gerektiğini Türkçe söyler. Claude Code kullanıyorsan şunu da çalıştırabilirsin:
 
 ```
 uvx posta-mcp doctor
 ```
 
-(Kaynaktan kurduysan `uv run posta-mcp doctor`.) Ayarları, anahtar zincirini ve IMAP girişini kontrol eder, eksik olanı yazar.
+(Kaynaktan kurduysan `uv run posta-mcp doctor`.) Ayarları, anahtar zincirini ve girişi kontrol eder, her sorunun altına ne yapacağını yazar.
 
-- **Giriş olmuyor:** Parolanın süresi dolmuş olabilir. `mail.bogazici.edu.tr/password` adresinden değiştirip `posta-mcp setup` komutunu yeniden çalıştır. Kullanıcı adı olarak `ad.soyad` yerine tam adresi denemek için `POSTA_USERNAME` değişkenini kullanabilirsin.
+- **Giriş olmuyor:** Parolanın süresi dolmuş olabilir. `mail.bogazici.edu.tr/password` adresinden değiştir. Sonra Claude Desktop'ta Ayarlar > Uzantılar > Boğaziçi Postanesi bölümünden, Claude Code'da `uvx posta-mcp parola` komutuyla yeni parolayı gir. Kullanıcı adı olarak `ad.soyad` yerine tam adresi denemek için `POSTA_USERNAME` değişkenini kullanabilirsin.
 - **Bağlantı kurulamıyor:** Kampüs dışındaysan ve üniversite IMAP için VPN istiyorsa önce BU-VPN'e bağlan. Bu da henüz doğrulanmadı.
-- **Parola bulunamadı diyorsa:** `posta-mcp setup` komutunu çalıştır.
+- **Parola bulunamadı diyorsa:** Claude Desktop'ta parolayı eklenti ayarlarına gir; Claude Code'da `uvx posta-mcp setup` çalıştır.
 - **Sunucu adı bulunamadı:** Adresin uzantısı tanınmıyor olabilir. `POSTA_IMAP_HOST` ve `POSTA_SMTP_HOST` değişkenlerini ver.
-- **Claude'da araçlar görünmüyor:** Claude Code'da `/mcp` yaz ya da terminalde `claude mcp list` çalıştır.
+- **Claude'da araçlar görünmüyor:** Claude Desktop'ta Ayarlar > Uzantılar bölümünde eklentinin açık olduğuna bak. Claude Code'da `/mcp` yaz ya da terminalde `claude mcp list` çalıştır.
+- **claude.ai web sitesinde ya da mobil uygulamada görünmüyor:** Normal; posta-mcp sadece Claude Desktop ve Claude Code ile çalışır.
 
-Parolanı komut satırına yazma. Hep `setup` kullan.
+Parolanı komut satırına ya da sohbete yazma. Hep `setup`, `parola` ya da eklenti ayarlarını kullan.
 
 ## Uyarılar
 
