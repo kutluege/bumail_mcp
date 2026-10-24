@@ -337,3 +337,23 @@ def test_live_verify_never_prints_the_password():
     for line in source.splitlines():
         if "print(" in line:
             assert "password" not in line.lower().replace("the password is never printed", "")
+
+
+# ------------------------------------------------------------------ Claude Code / Cowork plugin
+
+
+def test_plugin_manifest_basics():
+    p = load_json(".claude-plugin/plugin.json")
+    assert p["name"] == "posta-mcp" and p["version"] == __version__ and p["license"] == "MIT"
+    assert p["userConfig"]["password"]["sensitive"] is True
+
+
+def test_plugin_options_used_by_the_server_all_have_defaults():
+    # Cowork never asks for plugin options and skips a server that references one without a
+    # default, so every ${user_config.*} in .mcp.json needs one (credentials then come from
+    # `posta-mcp setup`: config.toml and the keychain).
+    options = load_json(".claude-plugin/plugin.json")["userConfig"]
+    text = (ROOT / ".mcp.json").read_text(encoding="utf-8")
+    used = set(re.findall(r"\$\{user_config\.(\w+)\}", text))
+    assert used == set(options)
+    assert all("default" in options[name] for name in used)

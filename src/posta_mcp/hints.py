@@ -140,8 +140,12 @@ _FIELD_NAMES = {
 SETUP_STEPS = (
     f"Claude Desktop kullanıyorsan: {DESKTOP_SETTINGS} bölümünde e-posta adresini (örneğin "
     "ad.soyad@std.bogazici.edu.tr) ve parolanı gir, sonra uzantıyı kapatıp yeniden aç. "
-    f"Claude Code kullanıyorsan: bir terminalde `{SETUP_COMMAND}` komutunu çalıştır, sonra "
-    f"Claude Code'da `/mcp` ile sunucuyu yeniden bağla. {_NO_CHAT_PASSWORD}"
+    "Claude Code eklentisi kullanıyorsan: `/plugin` yaz, Installed sekmesinde Boğaziçi "
+    "Postanesi'nin ayarlarına e-posta adresini ve parolanı gir. "
+    f"Cowork'te ya da eklentisiz Claude Code'da: bir terminalde `{SETUP_COMMAND}` komutunu "
+    'çalıştır (eklenti kullanıyorsan "Claude Code\'a şimdi ekleyeyim mi?" sorusuna "H" de), '
+    "sonra yeni bir Cowork görevi başlat ya da Claude Code'da `/mcp` ile sunucuyu yeniden bağla. "
+    f"{_NO_CHAT_PASSWORD}"
 )
 
 

@@ -6,7 +6,7 @@ English: [docs/README.en.md](docs/README.en.md)
 
 Claude'un e-postanı okumasını, aramasını, düzenlemesini, özetlemesini ve taslak yazmasını sağlayan küçük bir program. Kendi bilgisayarında çalışır ve doğrudan posta sunucusuna bağlanır; arada başka bir servis yoktur. Boğaziçi Üniversitesi (BUmail) için hazırlandı; başka IMAP/SMTP hesaplarıyla da Claude Code üzerinden kullanılabilir.
 
-Claude Desktop ve Claude Code ile çalışır. Claude Code için eklenti (plugin) olarak da kurulabilir. claude.ai web sitesinde, mobil uygulamada ve Cowork'te çalışmaz.
+Claude Desktop ve Claude Code ile çalışır. Claude Code ve Cowork için eklenti (plugin) olarak da kurulabilir. claude.ai web sitesinde ve mobil uygulamada çalışmaz.
 
 ## Kurulum
 
@@ -19,15 +19,17 @@ Claude Desktop ve Claude Code ile çalışır. Claude Code için eklenti (plugin
 
 Parolanı sonradan Ayarlar > Uzantılar > Boğaziçi Postanesi bölümünden değiştirebilirsin. Uzantı açılmazsa aşağıdaki gibi [uv](https://docs.astral.sh/uv/) kurup Claude Desktop'u yeniden başlat.
 
-### Claude Code eklentisi
+### Claude Code ve Cowork eklentisi
 
-Gerekenler: [uv](https://docs.astral.sh/uv/) (kurulumu aşağıda). Eklenti sadece Claude Code'da çalışır.
+Gerekenler: [uv](https://docs.astral.sh/uv/) (kurulumu aşağıda). Eklenti Claude Code'da ve bilgisayarında çalışan Cowork görevlerinde çalışır; normal sohbette çalışmaz.
 
 Eklenti Claude eklenti dizininde listelendikten sonra:
 
-1. Claude Code'da `/plugin` yaz, "Discover" sekmesinde "Boğaziçi Postanesi"ni bul ve kur. (claude.ai'da Customize > Plugins sayfasından eklersen Claude Code'a kendiliğinden gelir.)
+1. Claude Desktop'ta Ayarlar > Eklentiler > Keşfet sayfasında "Boğaziçi Postanesi"ni bul ve ekle. (Claude Code'da `/plugin` yazıp "Discover" sekmesinden de kurabilirsin; Desktop'ta eklediğin eklenti Claude Code'a kendiliğinden gelir.)
 2. Claude Code e-posta adresini, parolanı, göndermeye izin verilip verilmeyeceğini ve hazır ayarı sorar. Gönderme kutusunu kapalı bırak. Sonradan değiştirmek için `/plugin` yaz, "Installed" sekmesinden eklentiyi seç.
 3. Araçlar görünmezse `/reload-plugins` yaz. Sonra `/` yazıp `baslangic` ara ve çalıştır.
+
+**Cowork'te:** Cowork eklentinin ayarlarını sormaz. Eklentiyi ekledikten sonra bir kez terminalde `uvx --from git+https://github.com/kutluege/bumail_mcp posta-mcp setup` komutunu çalıştır: e-posta adresini ve parolanı sorar, girişi dener ve bu bilgisayara kaydeder (parola anahtar zincirine). "Claude Code'a şimdi ekleyeyim mi?" sorusuna "H" de; eklenti zaten var. Sonra yeni bir Cowork görevi başlat ve Claude'dan posta bağlantını kontrol etmesini iste. Parolan değişirse `parola` komutunu aynı şekilde çalıştır.
 
 Dizinde listelenmeden önce eklentiyi bu klasörden yükleyebilirsin ([git](https://git-scm.com/) de gerekir):
 

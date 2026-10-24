@@ -2,7 +2,7 @@
   "name": "posta-mcp",
   "displayName": "Boğaziçi Postanesi",
   "version": "0.1.0",
-  "description": "Unofficial. Lets Claude Code read, search, organize, summarize and draft your email over IMAP/SMTP, from your own computer. Made for Bogazici University (BUmail) accounts; other providers work with the generic preset. Sending is off by default. Claude Code only.",
+  "description": "Unofficial. Lets Claude read, search, organize, summarize and draft your email over IMAP/SMTP, from your own computer. Made for Bogazici University (BUmail) accounts; other providers work with the generic preset. Sending is off by default. Works in Claude Code and in Cowork sessions on your computer; not in regular chat.",
   "author": {
     "name": "Ege Kutlu",
     "url": "https://github.com/kutluege"
@@ -19,14 +19,16 @@
     "email": {
       "type": "string",
       "title": "E-posta adresin (email address)",
-      "description": "Tam adresin, örneğin ad.soyad@std.bogazici.edu.tr (öğrenci) ya da ad.soyad@bogazici.edu.tr (personel).",
-      "required": true
+      "description": "Tam adresin, örneğin ad.soyad@std.bogazici.edu.tr (öğrenci) ya da ad.soyad@bogazici.edu.tr (personel). Cowork'te bu alan sorulmaz; orada adresini bir kez `posta-mcp setup` ile kaydet.",
+      "default": "",
+      "required": false
     },
     "password": {
       "type": "string",
       "title": "E-posta parolan (password)",
-      "description": "Posta sunucusuna giriş parolan. Claude Code bunu güvenli depoda saklar. Parolanı `posta-mcp setup` ile anahtar zincirine kaydettiysen boş bırak.",
+      "description": "Posta sunucusuna giriş parolan. Claude Code bunu güvenli depoda saklar. Parolanı `posta-mcp setup` ile anahtar zincirine kaydettiysen (Cowork'te gerekli) boş bırak.",
       "sensitive": true,
+      "default": "",
       "required": false
     },
     "allow_send": {

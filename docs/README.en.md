@@ -69,24 +69,31 @@ Claude Code. Then type `/posta:baslangic` in a new chat. If the extension does n
 uv (below) and restart Desktop. Sending probably will not work in Desktop; drafts do. See
 [docs/CLIENTS.md](CLIENTS.md).
 
-posta-mcp does not work on the claude.ai website, the Claude mobile apps or in Cowork: it is a
-local (stdio-only) server.
+posta-mcp does not work on the claude.ai website or in the Claude mobile apps: it is a local
+(stdio-only) server. In Cowork it works through the plugin below.
 
-### Claude Code plugin
+### Claude Code and Cowork plugin
 
 Needs [uv](https://docs.astral.sh/uv/) (install it as shown in the next section). The plugin works
-in Claude Code only. It does not load in claude.ai chat, and it does not work in Cowork, because
-Cowork does not ask for the plugin's settings.
+in Claude Code and in Cowork tasks that run on your computer. It does not load in regular chat.
 
 Once the plugin is listed in Anthropic's plugin directory:
 
-1. In Claude Code, type `/plugin`, find "Boğaziçi Postanesi" on the Discover tab and install it.
-   (If you add it on claude.ai under Customize > Plugins, it reaches Claude Code by itself.)
+1. In Claude Desktop, open Settings > Plugins > Discover, find "Boğaziçi Postanesi" and add it.
+   (Or type `/plugin` in Claude Code and install it from the Discover tab; a plugin you add in
+   Desktop reaches Claude Code by itself.)
 2. Claude Code asks for your email address, your password, whether to allow sending (leave it
    off) and the preset. To change them later, type `/plugin` and pick the plugin on the Installed
    tab.
 3. If the tools do not show up, type `/reload-plugins`. Then type `/`, search for `baslangic` and
    run it.
+
+**In Cowork:** Cowork does not ask for the plugin's settings. After adding the plugin, run this
+once in a terminal: `uvx --from git+https://github.com/kutluege/bumail_mcp posta-mcp setup`. It asks for your email address and
+password, tests the login and saves them on this computer (the password in the OS keychain).
+Answer "H" (no) when it offers to add the server to Claude Code; the plugin already does that.
+Then start a new Cowork task and ask Claude to check your mail connection. If your password changes, run the
+`parola` command the same way.
 
 Before it is listed, load the plugin from a clone (also needs [git](https://git-scm.com/)):
 

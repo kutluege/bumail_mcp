@@ -306,6 +306,7 @@ def test_setup_problem_texts():
     assert "Ayarlarda bir sorun var" in bad and "Unknown preset" in bad
     assert "posta-mcp setup" in hints.SETUP_STEPS
     assert "Ayarlar > Uzantılar" in hints.SETUP_STEPS and "sohbete yazma" in hints.SETUP_STEPS
+    assert "/plugin" in hints.SETUP_STEPS and "Cowork" in hints.SETUP_STEPS
 
 
 @pytest.mark.anyio
