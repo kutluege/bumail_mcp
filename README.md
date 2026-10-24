@@ -1,6 +1,6 @@
-<!-- mcp-name: io.github.kutluege/posta-mcp -->
+<!-- mcp-name: io.github.kutluege/BuMail -->
 
-# posta-mcp (Boğaziçi Postanesi)
+# BuMail (Boğaziçi Postanesi)
 
 English: [docs/README.en.md](docs/README.en.md)
 
@@ -12,7 +12,7 @@ Claude Desktop ve Claude Code ile çalışır. claude.ai web sitesinde ve mobil 
 
 ### Claude Desktop (terminal gerekmez)
 
-1. [Sürümler sayfasından](https://github.com/kutluege/bumail_mcp/releases) `posta-mcp-<sürüm>.mcpb` dosyasını indir.
+1. [Sürümler sayfasından](https://github.com/kutluege/bumail_mcp/releases) `BuMail-<sürüm>.mcpb` dosyasını indir.
 2. Dosyaya çift tıkla (açılmazsa Claude Desktop'ta Ayarlar > Uzantılar sayfasına sürükle).
 3. E-posta adresini ve BUmail parolanı gir. "E-posta göndermeye izin ver" kutusunu boş bırak.
 4. Yeni bir sohbette `/posta:baslangic` yaz.
@@ -34,12 +34,12 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 Sonra kurulumu başlat:
 
 ```
-uvx --from git+https://github.com/kutluege/bumail_mcp posta-mcp setup
+uvx --from git+https://github.com/kutluege/bumail_mcp BuMail setup
 ```
 
 Program e-postanı ve parolanı sorar, girişi dener ve sadece giriş başarılı olunca kaydeder. Parola işletim sisteminin anahtar zincirinde saklanır. En sonda "Claude Code'a şimdi ekleyeyim mi?" diye sorar; "E" de. Claude Code'u yeniden başlat ve `/posta:baslangic` yaz.
 
-Diğer komutlar da aynı şekilde çalışır: `uvx --from git+https://github.com/kutluege/bumail_mcp posta-mcp <komut>`
+Diğer komutlar da aynı şekilde çalışır: `uvx --from git+https://github.com/kutluege/bumail_mcp BuMail <komut>`
 
 | Komut | Ne yapar |
 |---|---|
@@ -128,7 +128,7 @@ git clone https://github.com/kutluege/bumail_mcp
 cd bumail_mcp
 uv sync
 uv run pytest tests/unit -q
-uv run posta-mcp setup      # Claude Code'a bu klasörü kullanan komutla ekler
+uv run BuMail setup      # Claude Code'a bu klasörü kullanan komutla ekler
 ```
 
 Testler: [docs/TESTING.md](docs/TESTING.md) · Tasarım: [docs/SPEC.md](docs/SPEC.md) · İstemciler: [docs/CLIENTS.md](docs/CLIENTS.md) · Sürüm ve doğrulama: [docs/HANDOFF.md](docs/HANDOFF.md) · Lisans: [MIT](LICENSE)
