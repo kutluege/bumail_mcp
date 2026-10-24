@@ -35,7 +35,8 @@ These seven rules are enforced in code and covered by tests:
 
 1. **Local stdio only.** Nothing listens on a network port. stdout carries only protocol messages;
    logs go to stderr.
-2. **Your password lives only in the OS keychain or an environment variable.** Never in files,
+2. **Your password lives only in the OS keychain or an environment variable** (which Claude
+   Desktop and the Claude Code plugin fill from their own secure storage). Never in files,
    logs, tool output, error messages, or test data.
 3. **TLS is always verified.** There is no "skip verification" switch. Plaintext IMAP/SMTP is not
    supported (only implicit TLS or STARTTLS). `POSTA_CA_FILE` can only *add* a trusted CA for
@@ -68,10 +69,50 @@ Claude Code. Then type `/posta:baslangic` in a new chat. If the extension does n
 uv (below) and restart Desktop. Sending probably will not work in Desktop; drafts do. See
 [docs/CLIENTS.md](CLIENTS.md).
 
-posta-mcp does not work on the claude.ai website or the Claude mobile apps: it is a local
-(stdio-only) server.
+posta-mcp does not work on the claude.ai website, the Claude mobile apps or in Cowork: it is a
+local (stdio-only) server.
 
-### Claude Code (two commands)
+### Claude Code plugin
+
+Needs [uv](https://docs.astral.sh/uv/) (install it as shown in the next section). The plugin works
+in Claude Code only. It does not load in claude.ai chat, and it does not work in Cowork, because
+Cowork does not ask for the plugin's settings.
+
+Once the plugin is listed in Anthropic's plugin directory:
+
+1. In Claude Code, type `/plugin`, find "Boğaziçi Postanesi" on the Discover tab and install it.
+   (If you add it on claude.ai under Customize > Plugins, it reaches Claude Code by itself.)
+2. Claude Code asks for your email address, your password, whether to allow sending (leave it
+   off) and the preset. To change them later, type `/plugin` and pick the plugin on the Installed
+   tab.
+3. If the tools do not show up, type `/reload-plugins`. Then type `/`, search for `baslangic` and
+   run it.
+
+Before it is listed, load the plugin from a clone (also needs [git](https://git-scm.com/)):
+
+```
+git clone https://github.com/kutluege/bumail_mcp
+claude --plugin-dir ./bumail_mcp
+```
+
+This loads it for that session only, so start Claude Code with `--plugin-dir` each time. If you are
+not asked for your email address, type `/plugin` and fill in the plugin's settings. Installing by
+name from the GitHub repository (`/plugin install ... --marketplace kutluege/bumail_mcp`) needs a
+`.claude-plugin/marketplace.json`, which this repository does not have.
+
+You can keep the password in the OS keychain instead of the plugin settings:
+`uv run --directory ./bumail_mcp posta-mcp setup`. Then leave the plugin's password field empty;
+the server reads the keychain when the field is empty. If `setup` offers to add the server to
+Claude Code, answer no, or the same server shows up twice.
+
+With the plugin, prompt and tool names are longer: the prompts are
+`/mcp__plugin_posta-mcp_posta__hoca-ozet 7` and so on (type `/` and search for `hoca-ozet`), and
+the tools are `mcp__plugin_posta-mcp_posta__<tool>`. Preset: `bogazici` for Boğaziçi accounts;
+for another provider pick `generic` and save the server names first with `posta-mcp setup`.
+
+To remove it, type `/plugin` and uninstall it on the Installed tab.
+
+### Claude Code without the plugin (two commands)
 
 Needs [git](https://git-scm.com/) and [uv](https://docs.astral.sh/uv/).
 
@@ -186,6 +227,7 @@ each attachment's name, size and full path.
 
 Each takes `days` (default 7) and `language` (default Turkish). In Claude Code they appear as
 slash commands, for example `/posta:hoca-ozet 7` or `/mcp__posta__bana-ozet 3`.
+With the Claude Code plugin the names are `/mcp__plugin_posta-mcp_posta__hoca-ozet 7` and so on.
 
 ## Boğaziçi University
 
@@ -244,12 +286,73 @@ wrong. Check deadlines and announcements in the original mail.
 ## Enabling sending
 
 Off by default. To allow it, set `POSTA_ALLOW_SEND=true` in the client's environment or
-`[sending] enabled = true` in `config.toml`. Even then, `posta_gonder` and `taslagi_gonder` ask you to
+`[sending] enabled = true` in `config.toml`. With the Claude Code plugin, use the plugin's "allow sending"
+setting instead: the plugin always passes `POSTA_ALLOW_SEND`, which overrides `config.toml`. Even then, `posta_gonder` and `taslagi_gonder` ask you to
 confirm each message in the client (From, To, Cc, Bcc, subject, attachments, full body), and
 send exactly what was shown. If your client cannot show such a confirmation (Claude Desktop may not
 today), sending refuses and you can still create drafts and send them from your normal mail app.
 Be aware that a client-side hook that auto-approves elicitation prompts would defeat the
 confirmation; do not configure one for this server.
+
+## What the plugin runs
+
+Each time Claude Code starts, it runs
+`uv run --frozen --no-dev --directory <plugin folder> posta-mcp serve`.
+
+- On first start, uv downloads the Python packages pinned in `uv.lock` from PyPI (`pypi.org`,
+  `files.pythonhosted.org`) and installs them into Claude Code's plugin data folder (under
+  `~/.claude/plugins/data/`).
+- If Python 3.12 is not installed, uv also downloads it from its own download source.
+- After that the program talks only to Claude Code (over stdio) and to your mail servers (over
+  TLS). It opens no port and connects nowhere else.
+- If you run `posta-mcp setup` yourself, it can run `claude mcp add` when you say yes. The plugin
+  never does this on its own.
+
+## Privacy policy
+
+This policy covers the posta-mcp program and its Claude Code plugin.
+
+**Data collected.** The program works with:
+
+- What you enter at setup: your email address, your password, the sending setting and the preset.
+- What Claude asks to read from your mailbox: folder names, message headers and bodies, and the
+  text of attachments. They are read on demand, when a tool runs.
+- The interests you save for `bana-ozet`.
+
+The developer collects nothing. There is no telemetry, no usage statistics and no advertising.
+
+**Use and storage.** Everything stays on your computer.
+
+- Your password: in Claude Code's secure storage (the macOS Keychain; on systems without a supported
+  keychain, `~/.claude/.credentials.json`) if you typed it into the plugin settings, or in the OS keychain (service name `posta-mcp`) if you used `posta-mcp setup`.
+  The program never writes it to a file or a log.
+- Your email address and the other plugin settings: in Claude Code's settings file
+  (`~/.claude/settings.json`).
+- `config.toml` (settings without the password) and `profile.toml` (your interests): in your user
+  config folder. macOS: `~/Library/Application Support/posta-mcp/`, Linux: `~/.config/posta-mcp/`,
+  Windows: `%LOCALAPPDATA%\posta-mcp\posta-mcp\`. `posta-mcp doctor` prints the exact path.
+- Messages are not saved to disk or written to logs. Changes such as read flags, moves and drafts
+  are made on your mail server.
+
+**Sharing with third parties.** Data goes only to:
+
+- Your provider's IMAP/SMTP servers. For Boğaziçi: `imap.std.bogazici.edu.tr:993` and
+  `smtp.std.bogazici.edu.tr:587` (students), `imap.bogazici.edu.tr:993` and
+  `smtp.bogazici.edu.tr:587` (staff). With the `generic` preset, the servers you set. Your password
+  is sent only to these servers, to log in.
+- The AI model provider that your Claude client uses (Anthropic for Claude, or the provider your
+  organization chose) receives the mail content that Claude reads. That provider's privacy policy
+  applies there.
+- On first start, uv downloads packages from PyPI (see above). No mail data is sent with it.
+
+Nothing is sent anywhere else.
+
+**Retention.** The developer runs no server, so nothing is kept there. Your local settings stay
+until you delete them: uninstall the plugin with `/plugin` and run `posta-mcp forget` (removes the
+keychain password, the config and, if you choose, the profile). Your mail stays on your mail
+server. How long the AI model provider keeps data depends on its own policy.
+
+**Contact.** Questions and problems: [GitHub Issues](https://github.com/kutluege/bumail_mcp/issues).
 
 ## Development and testing
 

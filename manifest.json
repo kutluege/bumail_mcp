@@ -19,7 +19,7 @@
     "entry_point": "src/posta_mcp/__main__.py",
     "mcp_config": {
       "command": "uv",
-      "args": ["run", "--directory", "${__dirname}", "posta-mcp", "serve"],
+      "args": ["run", "--directory", "${__dirname}", "--no-dev", "--frozen", "posta-mcp", "serve"],
       "env": {
         "POSTA_PRESET": "bogazici",
         "POSTA_EMAIL": "${user_config.email}",

@@ -1,0 +1,48 @@
+{
+  "name": "posta-mcp",
+  "displayName": "Boğaziçi Postanesi",
+  "version": "0.1.0",
+  "description": "Unofficial. Lets Claude Code read, search, organize, summarize and draft your email over IMAP/SMTP, from your own computer. Made for Bogazici University (BUmail) accounts; other providers work with the generic preset. Sending is off by default. Claude Code only.",
+  "author": {
+    "name": "Ege Kutlu",
+    "url": "https://github.com/kutluege"
+  },
+  "homepage": "https://github.com/kutluege/bumail_mcp",
+  "repository": "https://github.com/kutluege/bumail_mcp",
+  "license": "MIT",
+  "keywords": ["email", "imap", "smtp", "mail", "bogazici", "bumail", "turkish"],
+  "icon": "./icon.png",
+  "documentationUrl": "https://github.com/kutluege/bumail_mcp#readme",
+  "supportUrl": "https://github.com/kutluege/bumail_mcp/issues",
+  "privacyPolicyUrl": "https://github.com/kutluege/bumail_mcp/blob/main/docs/README.en.md#privacy-policy",
+  "userConfig": {
+    "email": {
+      "type": "string",
+      "title": "E-posta adresin (email address)",
+      "description": "Tam adresin, örneğin ad.soyad@std.bogazici.edu.tr (öğrenci) ya da ad.soyad@bogazici.edu.tr (personel).",
+      "required": true
+    },
+    "password": {
+      "type": "string",
+      "title": "E-posta parolan (password)",
+      "description": "Posta sunucusuna giriş parolan. Claude Code bunu güvenli depoda saklar. Parolanı `posta-mcp setup` ile anahtar zincirine kaydettiysen boş bırak.",
+      "sensitive": true,
+      "required": false
+    },
+    "allow_send": {
+      "type": "boolean",
+      "title": "E-posta göndermeye izin ver (allow sending)",
+      "description": "Varsayılan olarak kapalı; kapalı bırakman önerilir. Açık olsa bile her e-posta için onayın gerekir. Okuma, arama ve taslak hazırlama bu ayar kapalıyken de çalışır.",
+      "default": false,
+      "required": false
+    },
+    "preset": {
+      "type": "string",
+      "title": "Hazır ayar (preset)",
+      "description": "bogazici: Boğaziçi hesapları. generic: başka bir IMAP/SMTP sağlayıcısı; sunucu adlarını önce `posta-mcp setup` ile kaydetmen gerekir.",
+      "options": ["bogazici", "generic"],
+      "default": "bogazici",
+      "required": false
+    }
+  }
+}

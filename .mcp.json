@@ -1,0 +1,23 @@
+{
+  "mcpServers": {
+    "posta": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--frozen",
+        "--no-dev",
+        "--directory",
+        "${CLAUDE_PLUGIN_ROOT}",
+        "posta-mcp",
+        "serve"
+      ],
+      "env": {
+        "UV_PROJECT_ENVIRONMENT": "${CLAUDE_PLUGIN_DATA}/venv",
+        "POSTA_PRESET": "${user_config.preset}",
+        "POSTA_EMAIL": "${user_config.email}",
+        "POSTA_PASSWORD": "${user_config.password}",
+        "POSTA_ALLOW_SEND": "${user_config.allow_send}"
+      }
+    }
+  }
+}

@@ -1,5 +1,6 @@
-# Files excluded from the .mcpb bundle. The bundle must keep: manifest.json, pyproject.toml,
-# README.md, LICENSE, icon.png, uv.lock and src/ (the host builds the project with `uv run`).
+# Files excluded from the .mcpb bundle (gitignore syntax, as read by `mcpb pack`). The bundle
+# must keep: manifest.json, pyproject.toml, README.md, LICENSE, icon.png, uv.lock and src/
+# (the host builds the project with `uv run`). A leading / anchors a pattern to the repo root.
 .venv/
 .git/
 .github/
@@ -9,16 +10,23 @@
 .ruff_cache/
 **/__pycache__/
 *.py[cod]
-dist/
-build/
+/dist/
+/build/
 *.egg-info/
 *.mcpb
-tests/
-docs/
-scripts/
+/tests/
+/docs/
+/scripts/
 .gitattributes
 .gitignore
 .python-version
 .mcpbignore
 server.json
 node_modules/
+# Claude Code plugin files (distributed separately, not part of the Desktop bundle)
+.claude-plugin/
+.mcp.json
+/skills/
+/commands/
+/agents/
+/hooks/

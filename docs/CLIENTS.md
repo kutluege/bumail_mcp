@@ -4,7 +4,46 @@ posta-mcp is a stdio MCP server. Every client launches it as a subprocess (`post
 password goes in the OS keychain (`posta-mcp setup`) or in `POSTA_PASSWORD`; never on a command line
 you will keep in shell history. Server name used below: `posta`.
 
-## Claude Code
+## Claude Code plugin
+
+The repository root is also a Claude Code plugin: `.claude-plugin/plugin.json` (name `posta-mcp`,
+display name "Boğaziçi Postanesi") and `.mcp.json`, which declares one stdio server named `posta`:
+
+```
+uv run --frozen --no-dev --directory ${CLAUDE_PLUGIN_ROOT} posta-mcp serve
+```
+
+with `UV_PROJECT_ENVIRONMENT=${CLAUDE_PLUGIN_DATA}/venv`, so the virtual environment lives in Claude
+Code's per-plugin data folder (kept across plugin updates) and not in the versioned plugin folder.
+`--frozen` installs exactly what `uv.lock` pins and never re-locks (CI's `uv sync --locked` keeps the
+lock in step with `pyproject.toml`); `--no-dev` skips pytest and ruff. Needs `uv` on `PATH`.
+
+The plugin asks for four `userConfig` values and passes them as environment variables:
+
+| Option | Variable | Notes |
+|---|---|---|
+| `email` (required) | `POSTA_EMAIL` | |
+| `password` (sensitive, optional) | `POSTA_PASSWORD` | Stored in Claude Code's secure storage. Left empty, it reaches the server as an empty string, which counts as unset, so the server reads the OS keychain (`posta-mcp setup`) instead. |
+| `allow_send` (default `false`) | `POSTA_ALLOW_SEND` | Always set, so it overrides `[sending]` in `config.toml`. |
+| `preset` (`bogazici` or `generic`, default `bogazici`) | `POSTA_PRESET` | Always set, so it overrides `preset` in `config.toml`. For `generic`, put the hosts in `config.toml` (`posta-mcp setup`). |
+
+- **Load it:** from the directory once listed (`/plugin`, Discover tab), or for one session with
+  `claude --plugin-dir /path/to/bumail_mcp`. Installing by name from GitHub would need a
+  `.claude-plugin/marketplace.json`, which the repository does not have.
+- **Names:** the server shows in `/mcp` as `plugin:posta-mcp:posta`. Tools are
+  `mcp__plugin_posta-mcp_posta__<tool>` (use that form in permission rules). Prompts run as
+  `/mcp__plugin_posta-mcp_posta__hoca-ozet 7` and so on; `/posta:...` is only for the `claude mcp add`
+  registration below.
+- **Settings for a `--plugin-dir` session:** if Claude Code does not ask, use `/plugin`. The
+  non-sensitive values are saved under `pluginConfigs["posta-mcp@inline"].options` in
+  `~/.claude/settings.json`; a missing required `email` keeps the server from starting
+  (`Plugin option "email" isn't set`).
+- **Do not combine** the plugin with a `claude mcp add ... posta` registration: both would run. Remove
+  the old one with `claude mcp remove posta --scope user`.
+- Verified on Claude Code 2.1.310 (macOS): `claude -p --plugin-dir <repo>` connected
+  `plugin:posta-mcp:posta`, listed the 18 tools and the 4 prompts, and `sunucu_bilgisi` answered.
+
+## Claude Code without the plugin
 
 `uvx --from git+https://github.com/kutluege/bumail_mcp posta-mcp setup` (or `uv run posta-mcp setup` from a checkout) stores the password, writes
 `config.toml` (which holds the email, so no `--env POSTA_EMAIL` is needed) and offers to register the
