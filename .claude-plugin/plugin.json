@@ -42,7 +42,6 @@
       "type": "string",
       "title": "Hazır ayar (preset)",
       "description": "bogazici: Boğaziçi hesapları. generic: başka bir IMAP/SMTP sağlayıcısı; sunucu adlarını önce `posta-mcp setup` ile kaydetmen gerekir.",
-      "options": ["bogazici", "generic"],
       "default": "bogazici",
       "required": false
     }

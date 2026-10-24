@@ -357,3 +357,13 @@ def test_plugin_options_used_by_the_server_all_have_defaults():
     used = set(re.findall(r"\$\{user_config\.(\w+)\}", text))
     assert used == set(options)
     assert all("default" in options[name] for name in used)
+
+
+def test_plugin_server_passes_the_directory_checks():
+    # The directory blocks uv/pip environment variables in a server's env (read as a registry or
+    # index redirect) and `options` on a userConfig key that the server references.
+    server = load_json(".mcp.json")["mcpServers"]["posta"]
+    assert not [k for k in server["env"] if k.startswith(("UV_", "PIP_", "NPM_"))]
+    assert {"--frozen", "--no-dev"} <= set(server["args"])
+    options = load_json(".claude-plugin/plugin.json")["userConfig"]
+    assert not [name for name, opt in options.items() if "options" in opt]

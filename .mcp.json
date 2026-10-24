@@ -12,7 +12,6 @@
         "serve"
       ],
       "env": {
-        "UV_PROJECT_ENVIRONMENT": "${CLAUDE_PLUGIN_DATA}/venv",
         "POSTA_PRESET": "${user_config.preset}",
         "POSTA_EMAIL": "${user_config.email}",
         "POSTA_PASSWORD": "${user_config.password}",

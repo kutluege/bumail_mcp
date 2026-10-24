@@ -307,8 +307,7 @@ Each time Claude Code starts, it runs
 `uv run --frozen --no-dev --directory <plugin folder> posta-mcp serve`.
 
 - On first start, uv downloads the Python packages pinned in `uv.lock` from PyPI (`pypi.org`,
-  `files.pythonhosted.org`) and installs them into Claude Code's plugin data folder (under
-  `~/.claude/plugins/data/`).
+  `files.pythonhosted.org`) and installs them into a `.venv` folder inside the plugin folder.
 - If Python 3.12 is not installed, uv also downloads it from its own download source.
 - After that the program talks only to Claude Code (over stdio) and to your mail servers (over
   TLS). It opens no port and connects nowhere else.

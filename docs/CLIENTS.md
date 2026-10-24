@@ -13,8 +13,9 @@ display name "Boğaziçi Postanesi") and `.mcp.json`, which declares one stdio s
 uv run --frozen --no-dev --directory ${CLAUDE_PLUGIN_ROOT} posta-mcp serve
 ```
 
-with `UV_PROJECT_ENVIRONMENT=${CLAUDE_PLUGIN_DATA}/venv`, so the virtual environment lives in Claude
-Code's per-plugin data folder (kept across plugin updates) and not in the versioned plugin folder.
+uv creates the virtual environment as `.venv` inside the plugin folder, so each plugin version gets a
+fresh one. (The directory's checks refuse uv environment variables in the server's `env`, so
+`UV_PROJECT_ENVIRONMENT` cannot move it to `${CLAUDE_PLUGIN_DATA}`.)
 `--frozen` installs exactly what `uv.lock` pins and never re-locks (CI's `uv sync --locked` keeps the
 lock in step with `pyproject.toml`); `--no-dev` skips pytest and ruff. Needs `uv` on `PATH`.
 
@@ -25,7 +26,7 @@ The plugin asks for four `userConfig` values and passes them as environment vari
 | `email` (required) | `POSTA_EMAIL` | |
 | `password` (sensitive, optional) | `POSTA_PASSWORD` | Stored in Claude Code's secure storage. Left empty, it reaches the server as an empty string, which counts as unset, so the server reads the OS keychain (`posta-mcp setup`) instead. |
 | `allow_send` (default `false`) | `POSTA_ALLOW_SEND` | Always set, so it overrides `[sending]` in `config.toml`. |
-| `preset` (`bogazici` or `generic`, default `bogazici`) | `POSTA_PRESET` | Always set, so it overrides `preset` in `config.toml`. For `generic`, put the hosts in `config.toml` (`posta-mcp setup`). |
+| `preset` (free text: `bogazici` or `generic`, default `bogazici`) | `POSTA_PRESET` | Always set, so it overrides `preset` in `config.toml`. For `generic`, put the hosts in `config.toml` (`posta-mcp setup`). |
 
 - **Load it:** from the directory once listed (`/plugin`, Discover tab), or for one session with
   `claude --plugin-dir /path/to/bumail_mcp`. Installing by name from GitHub would need a

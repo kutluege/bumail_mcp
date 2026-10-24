@@ -154,7 +154,7 @@ Sunucular e-posta adresinin uzantısından seçilir; kullanıcı adı `@` önces
 
 Claude Code her açılışta şu komutu çalıştırır: `uv run --frozen --no-dev --directory <eklenti klasörü> posta-mcp serve`.
 
-- İlk açılışta uv, Python paketlerini `uv.lock` dosyasındaki tam sürümleriyle PyPI'dan (`pypi.org`, `files.pythonhosted.org`) indirir. Paketleri Claude Code'un eklenti veri klasörüne (`~/.claude/plugins/data/` altında) kurar.
+- İlk açılışta uv, Python paketlerini `uv.lock` dosyasındaki tam sürümleriyle PyPI'dan (`pypi.org`, `files.pythonhosted.org`) indirir. Paketleri eklenti klasöründeki `.venv` klasörüne kurar.
 - Bilgisayarında Python 3.12 yoksa uv onu da kendi indirme kaynağından indirir.
 - Sonra program yalnızca Claude Code ile (stdio üzerinden) ve posta sunucularınla (TLS ile) konuşur. Port açmaz, başka bir adrese bağlanmaz.
 - `posta-mcp setup` komutunu sen çalıştırırsan, istediğinde `claude mcp add` komutunu da çalıştırır. Eklenti bunu kendisi yapmaz.
